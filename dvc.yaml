@@ -1,0 +1,8 @@
+stages:
+  preprocess:
+    cmd: python src/data/make_dataset.py
+    deps:
+    - data/raw
+    - src/data/make_dataset.py
+    outs:
+    - data/processed/flights_2022_2023.parquet

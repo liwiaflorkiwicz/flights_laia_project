@@ -1,0 +1,19 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python src/data/make_dataset.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: e2ffb0baf7be091ee097ca1c2eea669d.dir
+      size: 1552769895
+      nfiles: 24
+    - path: src/data/make_dataset.py
+      hash: md5
+      md5: bbc8962edcdcec4101de86eabfb85f62
+      size: 3068
+    outs:
+    - path: data/processed/flights_2022_2023.parquet
+      hash: md5
+      md5: bdc725780d3b404526a3fdc0966b576e
+      size: 107541287
