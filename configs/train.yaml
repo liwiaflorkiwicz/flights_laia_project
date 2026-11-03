@@ -1,0 +1,95 @@
+# Training configuration for the flight delay severity model.
+# Every path is relative to the repository root unless stated otherwise.
+
+data:
+  processed_path: data/processed/flights_2022_2023.parquet
+  split_dir: data/processed/splits
+  target: DELAY_SEVERITY
+  # Streaming/batching settings keep peak RAM low on the 13M-row dataset.
+  chunk_size: 200000
+  fit_sample_rows: 1000000
+
+  # "temporal" reproduces the deployment setting: the model is always
+  # evaluated on future flights. "stratified" is a random, class-balanced
+  # split kept only for ablation/diagnostics (it leaks future information
+  # into the training set and must not be used for final reporting).
+  split:
+    strategy: temporal
+    train_end: "2023-09-30"
+    val_end: "2023-11-30"
+    # test = everything strictly after val_end (December 2023)
+    random_state: 42
+    # used only when strategy == "stratified"
+    val_size: 0.15
+    test_size: 0.15
+
+features:
+  # Columns that are known before scheduled departure. Anything measured
+  # after departure (DepDelay, TaxiOut, AirTime, delay causes, ...) is
+  # deliberately excluded to avoid target leakage.
+  categorical:
+    - OP_UNIQUE_CARRIER
+    - ORIGIN
+    - DEST
+    - ORIGIN_STATE_NM
+    - DEST_STATE_NM
+    - DEP_TIME_BLK
+    - ROUTE
+  frequency:
+    - OP_UNIQUE_CARRIER
+    - ORIGIN
+    - DEST
+    - ROUTE
+
+model:
+  # LightGBM is a fast, memory-efficient choice for tabular data.
+  params:
+    objective: multiclass
+    num_class: 3
+    n_estimators: 1200
+    learning_rate: 0.07
+    num_leaves: 63
+    max_depth: -1
+    min_child_samples: 200
+    subsample: 0.8
+    subsample_freq: 1
+    colsample_bytree: 0.8
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    max_bin: 127
+    class_weight: balanced
+    n_jobs: -1
+    random_state: 42
+    verbose: -1
+  early_stopping_rounds: 100
+  # Metric used by early stopping on the validation set. "macro_f1" uses a
+  # custom LightGBM metric and matches the primary evaluation metric.
+  eval_metric: macro_f1
+
+evaluation:
+  labels:
+    - on_time
+    - moderate_delay
+    - severe_delay
+  subgroup_columns:
+    - OP_UNIQUE_CARRIER
+    - ORIGIN
+  min_subgroup_size: 200
+  figures_dir: reports/figures
+  metrics_path: reports/metrics.json
+  report_path: reports/classification_report.txt
+
+artifacts:
+  model_path: models/model.joblib
+  metadata_path: models/metadata.json
+
+mlflow:
+  enabled: true
+  # Overridden by the MLFLOW_TRACKING_URI environment variable when set.
+  # MLflow 3.x no longer supports the legacy ./mlruns file store.
+  tracking_uri: sqlite:///mlflow.db
+  experiment_name: flight-delay-severity
+  registered_model_name: flight-delay-severity
+  # Remote registries only: local file stores cannot host a model registry.
+  register_model: false
+  model_stage: Staging

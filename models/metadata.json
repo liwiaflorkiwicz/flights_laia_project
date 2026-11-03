@@ -1,0 +1,317 @@
+{
+  "created_at": "2026-11-03T16:59:21.343721+00:00",
+  "git_commit": "c31812b",
+  "python_version": "3.12.10",
+  "lightgbm_version": "4.6.0",
+  "target": "DELAY_SEVERITY",
+  "labels": [
+    "on_time",
+    "moderate_delay",
+    "severe_delay"
+  ],
+  "classes": [
+    "moderate_delay",
+    "on_time",
+    "severe_delay"
+  ],
+  "n_features": 41,
+  "feature_names": [
+    "month",
+    "day_of_month",
+    "day_of_week",
+    "day_of_year",
+    "week_of_year",
+    "quarter",
+    "is_weekend",
+    "month_sin",
+    "month_cos",
+    "dow_sin",
+    "dow_cos",
+    "dep_hour",
+    "dep_minute",
+    "dep_minutes",
+    "dep_time_sin",
+    "dep_time_cos",
+    "arr_hour",
+    "arr_minute",
+    "arr_minutes",
+    "arr_time_sin",
+    "arr_time_cos",
+    "is_red_eye",
+    "is_overnight",
+    "dep_period",
+    "crs_elapsed_time",
+    "distance",
+    "distance_per_minute",
+    "implied_speed_mph",
+    "schedule_buffer_min",
+    "same_state",
+    "OP_UNIQUE_CARRIER",
+    "ORIGIN",
+    "DEST",
+    "ORIGIN_STATE_NM",
+    "DEST_STATE_NM",
+    "DEP_TIME_BLK",
+    "ROUTE",
+    "freq_OP_UNIQUE_CARRIER",
+    "freq_ORIGIN",
+    "freq_DEST",
+    "freq_ROUTE"
+  ],
+  "best_iteration": 354,
+  "training_seconds": 610.97,
+  "splits": {
+    "train": {
+      "rows": 11550058
+    },
+    "val": {
+      "rows": 1158416
+    },
+    "test": {
+      "rows": 566941
+    },
+    "summary": {
+      "strategy": "temporal",
+      "boundaries": {
+        "train_end": "2023-09-30",
+        "val_end": "2023-11-30",
+        "test": "> 2023-11-30"
+      },
+      "target": "DELAY_SEVERITY",
+      "labels": [
+        "on_time",
+        "moderate_delay",
+        "severe_delay"
+      ],
+      "splits": {
+        "train": {
+          "rows": 11550058,
+          "date_min": "2022-01-01",
+          "date_max": "2023-09-30",
+          "class_counts": {
+            "on_time": 9045047,
+            "moderate_delay": 1656464,
+            "severe_delay": 848547
+          },
+          "class_share": {
+            "on_time": 0.783117,
+            "moderate_delay": 0.143416,
+            "severe_delay": 0.073467
+          }
+        },
+        "val": {
+          "rows": 1158416,
+          "date_min": "2023-10-01",
+          "date_max": "2023-11-30",
+          "class_counts": {
+            "on_time": 989083,
+            "moderate_delay": 123803,
+            "severe_delay": 45530
+          },
+          "class_share": {
+            "on_time": 0.853824,
+            "moderate_delay": 0.106873,
+            "severe_delay": 0.039304
+          }
+        },
+        "test": {
+          "rows": 566941,
+          "date_min": "2023-12-01",
+          "date_max": "2023-12-31",
+          "class_counts": {
+            "on_time": 477788,
+            "moderate_delay": 63538,
+            "severe_delay": 25615
+          },
+          "class_share": {
+            "on_time": 0.842747,
+            "moderate_delay": 0.112072,
+            "severe_delay": 0.045181
+          }
+        }
+      }
+    }
+  },
+  "metrics": {
+    "val": {
+      "n_samples": 1158416,
+      "accuracy": 0.6629803110454275,
+      "balanced_accuracy": 0.4218084542124167,
+      "macro_precision": 0.38288489929708763,
+      "macro_recall": 0.4218084542124167,
+      "macro_f1": 0.38287362299739075,
+      "weighted_f1": 0.7104750761554228,
+      "quadratic_weighted_kappa": 0.12712314500158983,
+      "per_class": {
+        "on_time": {
+          "precision": 0.8891643160738283,
+          "recall": 0.7231445692626403,
+          "f1": 0.7976069005124088,
+          "support": 989083
+        },
+        "moderate_delay": {
+          "precision": 0.17126532564832606,
+          "recall": 0.35857774044247714,
+          "f1": 0.23181178510165557,
+          "support": 123803
+        },
+        "severe_delay": {
+          "precision": 0.08822505616910857,
+          "recall": 0.18370305293213265,
+          "f1": 0.11920218337810778,
+          "support": 45530
+        }
+      },
+      "confusion_matrix": [
+        [
+          715250,
+          201734,
+          72099
+        ],
+        [
+          65070,
+          44393,
+          14340
+        ],
+        [
+          24087,
+          13079,
+          8364
+        ]
+      ],
+      "log_loss": 1.201135968978983
+    },
+    "test": {
+      "n_samples": 566941,
+      "accuracy": 0.41049068597966987,
+      "balanced_accuracy": 0.42195484397275945,
+      "macro_precision": 0.3688019681649135,
+      "macro_recall": 0.42195484397275945,
+      "macro_f1": 0.29474351405257865,
+      "weighted_f1": 0.5058418154078632,
+      "quadratic_weighted_kappa": 0.07213709840823102,
+      "per_class": {
+        "on_time": {
+          "precision": 0.9010439173053743,
+          "recall": 0.4145981062730751,
+          "f1": 0.5678917138380782,
+          "support": 477788
+        },
+        "moderate_delay": {
+          "precision": 0.13575014999842108,
+          "recall": 0.3382857502596871,
+          "f1": 0.1937504788775561,
+          "support": 63538
+        },
+        "severe_delay": {
+          "precision": 0.06961183719094516,
+          "recall": 0.5129806753855163,
+          "f1": 0.12258834944210173,
+          "support": 25615
+        }
+      },
+      "confusion_matrix": [
+        [
+          198090,
+          130416,
+          149282
+        ],
+        [
+          15705,
+          21494,
+          26339
+        ],
+        [
+          6050,
+          6425,
+          13140
+        ]
+      ],
+      "log_loss": 1.1572829240109266
+    }
+  },
+  "config": {
+    "data": {
+      "processed_path": "data/processed/flights_2022_2023.parquet",
+      "split_dir": "data/processed/splits",
+      "target": "DELAY_SEVERITY",
+      "chunk_size": 200000,
+      "fit_sample_rows": 1000000,
+      "split": {
+        "strategy": "temporal",
+        "train_end": "2023-09-30",
+        "val_end": "2023-11-30",
+        "random_state": 42,
+        "val_size": 0.15,
+        "test_size": 0.15
+      }
+    },
+    "features": {
+      "categorical": [
+        "OP_UNIQUE_CARRIER",
+        "ORIGIN",
+        "DEST",
+        "ORIGIN_STATE_NM",
+        "DEST_STATE_NM",
+        "DEP_TIME_BLK",
+        "ROUTE"
+      ],
+      "frequency": [
+        "OP_UNIQUE_CARRIER",
+        "ORIGIN",
+        "DEST",
+        "ROUTE"
+      ]
+    },
+    "model": {
+      "params": {
+        "objective": "multiclass",
+        "num_class": 3,
+        "n_estimators": 1200,
+        "learning_rate": 0.07,
+        "num_leaves": 63,
+        "max_depth": -1,
+        "min_child_samples": 200,
+        "subsample": 0.8,
+        "subsample_freq": 1,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "max_bin": 127,
+        "class_weight": "balanced",
+        "n_jobs": -1,
+        "random_state": 42,
+        "verbose": -1
+      },
+      "early_stopping_rounds": 100,
+      "eval_metric": "macro_f1"
+    },
+    "evaluation": {
+      "labels": [
+        "on_time",
+        "moderate_delay",
+        "severe_delay"
+      ],
+      "subgroup_columns": [
+        "OP_UNIQUE_CARRIER",
+        "ORIGIN"
+      ],
+      "min_subgroup_size": 200,
+      "figures_dir": "reports/figures",
+      "metrics_path": "reports/metrics.json",
+      "report_path": "reports/classification_report.txt"
+    },
+    "artifacts": {
+      "model_path": "models/model.joblib",
+      "metadata_path": "models/metadata.json"
+    },
+    "mlflow": {
+      "enabled": true,
+      "tracking_uri": "mlruns",
+      "experiment_name": "flight-delay-severity",
+      "registered_model_name": "flight-delay-severity",
+      "register_model": false,
+      "model_stage": "Staging"
+    }
+  }
+}
