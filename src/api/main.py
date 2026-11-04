@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, status
 import joblib
 import pandas as pd
 
+from src.data.preprocessor import FlightFeatureExtractor
 from src.api.schemas import BatchInferenceRequest, BatchInferenceResponse
 
 app = FastAPI(
@@ -47,17 +48,9 @@ def classify_flights(payload: BatchInferenceRequest) -> BatchInferenceResponse:
             detail="instances cannot be empty :'("
         )
 
-    if model_pipeline is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="model not loaded :'("
-        )
-
     try:
         df_input = pd.DataFrame(payload.instances)
 
-        # TO DO
-        # to update to predict from model
         predictions = model_pipeline.predict(df_input)
 
         return BatchInferenceResponse(classifications=list(predictions))
