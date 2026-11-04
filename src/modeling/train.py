@@ -34,6 +34,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
 from src.features.build_features import build_preprocessor
+from src.modeling.class_weights import inverse_frequency_weights
 from src.modeling.evaluate import (
     classification_metrics,
     report_text,
@@ -344,7 +345,9 @@ def main() -> None:
 
         artifacts = [metrics_path, metadata_path]
         report_path = resolve_path(cfg["evaluation"]["report_path"])
-        importance_path = REPO_ROOT / "reports" / "feature_importance.csv"
+        importance_path = resolve_path(
+            cfg["evaluation"].get("importance_path", "reports/feature_importance.csv")
+        )
         split_summary_path = split_dir / "split_summary.json"
         artifacts.extend(
             [
@@ -388,6 +391,7 @@ def main() -> None:
     preprocessor = build_preprocessor(
         categorical=cfg["features"].get("categorical"),
         frequency=cfg["features"].get("frequency"),
+        numeric=cfg["features"].get("numeric"),
     )
     started = time.perf_counter()
 
@@ -428,11 +432,15 @@ def main() -> None:
         raise ValueError(f"Unexpected labels in training split: {sorted(unknown)}")
 
     model_params = dict(cfg["model"]["params"])
+    model_params.pop("class_weight", None)
+    weight_power = cfg["model"].get("class_weight_power")
+    class_weights = inverse_frequency_weights(y_train, labels, float(weight_power or 0.0))
+    print(f"Class weights (power={weight_power}): {class_weights}")
     early_stopping_rounds = int(cfg["model"].get("early_stopping_rounds", 100))
     eval_metric = cfg["model"].get("eval_metric", "macro_f1")
     metric_argument = macro_f1_eval if eval_metric == "macro_f1" else eval_metric
 
-    classifier = LGBMClassifier(**model_params)
+    classifier = LGBMClassifier(**model_params, class_weight=class_weights)
     print(f"Training LightGBM (early stopping on validation {eval_metric}) ...")
     classifier.fit(
         X_train,
@@ -544,7 +552,9 @@ def main() -> None:
 
     feature_names = preprocessor.get_feature_names_out()
     importance = classifier.booster_.feature_importance(importance_type="gain")
-    importance_path = REPO_ROOT / "reports" / "feature_importance.csv"
+    importance_path = resolve_path(
+        cfg["evaluation"].get("importance_path", "reports/feature_importance.csv")
+    )
     importance_path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame({"feature": feature_names, "gain": importance}).sort_values(
         "gain", ascending=False
