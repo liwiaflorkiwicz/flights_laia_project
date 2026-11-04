@@ -1,39 +1,59 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Dict
 from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import RedirectResponse
 import joblib
 import pandas as pd
-
-from src.data.preprocessor import FlightFeatureExtractor
 from src.api.schemas import BatchInferenceRequest, BatchInferenceResponse
+
+# baseline model path
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MODEL_PATH = PROJECT_ROOT / "models" / "model.joblib"
+
+model_pipeline = None
+load_error = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global model_pipeline, load_error
+
+    print(f"MAIN FILE: {Path(__file__).resolve()}")
+    print(f"PROJECT ROOT: {PROJECT_ROOT}")
+    print(f"MODEL PATH: {MODEL_PATH}")
+    print(f"MODEL EXISTS: {MODEL_PATH.exists()}")
+
+    try:
+        model_pipeline = joblib.load(MODEL_PATH)
+        load_error = None
+        print(f"MODEL LOADED: {type(model_pipeline)}")
+
+    except Exception as e:
+        model_pipeline = None
+        load_error = repr(e)
+        print(f"MODEL LOADING FAILED: {repr(e)}")
+
+    yield
 
 app = FastAPI(
     title="BTS Flight Delay Severity Inference API",
     version="0.1.0",
+    lifespan=lifespan,
 )
-
-# baseline model path
-MODEL_PATH = Path(__file__).resolve().parents[2] / "models" / "baseline_model.joblib"
-
-# global model variable
-model_pipeline = None
-
-
-@app.on_event("startup")
-def load_model():
-    global model_pipeline
-
-    if not MODEL_PATH.exists():
-        raise RuntimeError(f"No model found: {MODEL_PATH}")
-
-    model_pipeline = joblib.load(MODEL_PATH)
-    print(f"Model read correctly: {MODEL_PATH}")
-
 
 @app.get("/health")
 def health_check() -> Dict[str, str]:
-    return {"status": "ok", "model_loaded": str(model_pipeline is not None)}
+    return {
+        "status": "ok",
+        "model_loaded": str(model_pipeline is not None),
+        "debug_error": load_error or "none"
+    }
 
+# to correctly redirect path
+@app.get("/", include_in_schema=False)
+def root_redirect():
+    return RedirectResponse(url="/docs")
 
 @app.post(
     "/classify",
@@ -42,6 +62,12 @@ def health_check() -> Dict[str, str]:
 )
 
 def classify_flights(payload: BatchInferenceRequest) -> BatchInferenceResponse:
+    if model_pipeline is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Model not loaded :'(",
+        )
+
     if not payload.instances:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -50,9 +76,7 @@ def classify_flights(payload: BatchInferenceRequest) -> BatchInferenceResponse:
 
     try:
         df_input = pd.DataFrame(payload.instances)
-
         predictions = model_pipeline.predict(df_input)
-
         return BatchInferenceResponse(classifications=list(predictions))
 
     except Exception as e:

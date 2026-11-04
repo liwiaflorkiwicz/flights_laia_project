@@ -1,0 +1,9 @@
+.git
+.dvc
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+data/raw
+data/interim
+models/*.parquet
