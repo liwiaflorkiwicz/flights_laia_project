@@ -203,7 +203,7 @@ def log_to_mlflow(
     import mlflow.sklearn
 
     mlflow_cfg = cfg["mlflow"]
-    mlflow.set_tracking_uri(mlflow_cfg.get("tracking_uri", "mlruns"))
+    mlflow.set_tracking_uri(mlflow_cfg.get("tracking_uri", "mlruns"))       # add VM1 IP
     mlflow.set_experiment(mlflow_cfg.get("experiment_name", "flight-delay-severity"))
 
     with mlflow.start_run(run_name=run_name):

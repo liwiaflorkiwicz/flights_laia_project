@@ -12,7 +12,6 @@ from src.data.prepare_splits import (
     validate_masks,
 )
 
-
 def test_temporal_split_is_chronological_and_disjoint():
     dates = pd.Series(
         pd.to_datetime(
