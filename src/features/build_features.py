@@ -145,9 +145,11 @@ class FlightFeatureEngineer(BaseEstimator, TransformerMixin):
         self,
         categorical: Sequence[str] | None = None,
         frequency: Sequence[str] | None = None,
+        numeric: Sequence[str] | None = None,
     ) -> None:
         self.categorical = categorical
         self.frequency = frequency
+        self.numeric = numeric
 
     def _categorical_columns(self) -> list[str]:
         if self.categorical is None:
@@ -158,6 +160,11 @@ class FlightFeatureEngineer(BaseEstimator, TransformerMixin):
         if self.frequency is None:
             return list(DEFAULT_FREQUENCY)
         return list(self.frequency)
+
+    def _numeric_columns(self) -> list[str]:
+        if self.numeric is None:
+            return list(NUMERIC_FEATURES)
+        return list(self.numeric)
 
     def fit(self, X: pd.DataFrame, y=None) -> "FlightFeatureEngineer":
         if not isinstance(X, pd.DataFrame):
@@ -245,9 +252,24 @@ class FlightFeatureEngineer(BaseEstimator, TransformerMixin):
                 values = _series(X, column, MISSING_CATEGORY).astype("string")
             out[column] = values.fillna(MISSING_CATEGORY).astype(object)
 
+        # Configured numeric columns that are not derived above (for example
+        # weather features joined onto the splits) are passed through as-is.
+        # Missing columns become NaN, so the same pipeline accepts payloads
+        # with or without those optional features.
+        for column in self._numeric_columns():
+            if column not in out:
+                out[column] = _numeric(X, column)
+
         transformed = pd.DataFrame(out, index=index)
-        # Keep memory predictable on the 13M-row dataset.
-        for column in NUMERIC_FEATURES:
+        # Keep memory predictable on the 13M-row dataset and support feature
+        # subsets for ablation studies.
+        selected = [
+            column
+            for column in self._numeric_columns() + self._categorical_columns()
+            if column in transformed.columns
+        ]
+        transformed = transformed[selected]
+        for column in self._numeric_columns():
             if column in transformed.columns:
                 transformed[column] = pd.to_numeric(
                     transformed[column], errors="coerce"
@@ -257,7 +279,7 @@ class FlightFeatureEngineer(BaseEstimator, TransformerMixin):
 
     def get_feature_names_out(self, input_features=None) -> np.ndarray:
         return np.asarray(
-            NUMERIC_FEATURES + self._categorical_columns(), dtype=object
+            self._numeric_columns() + self._categorical_columns(), dtype=object
         )
 
 
@@ -302,6 +324,7 @@ class FrequencyEncoder(BaseEstimator, TransformerMixin):
 def build_preprocessor(
     categorical: Sequence[str] | None = None,
     frequency: Sequence[str] | None = None,
+    numeric: Sequence[str] | None = None,
 ) -> Pipeline:
     """Build the feature-engineering + encoding pipeline.
 
@@ -310,6 +333,7 @@ def build_preprocessor(
     """
     categorical = list(categorical) if categorical is not None else DEFAULT_CATEGORICAL
     frequency = list(frequency) if frequency is not None else DEFAULT_FREQUENCY
+    numeric = list(numeric) if numeric is not None else NUMERIC_FEATURES
 
     encoder = OrdinalEncoder(
         handle_unknown="use_encoded_value",
@@ -319,7 +343,7 @@ def build_preprocessor(
 
     transformer = ColumnTransformer(
         transformers=[
-            ("numeric", "passthrough", NUMERIC_FEATURES),
+            ("numeric", "passthrough", numeric),
             ("categorical", encoder, categorical),
             ("frequency", FrequencyEncoder(frequency), frequency),
         ],
@@ -330,7 +354,12 @@ def build_preprocessor(
 
     return Pipeline(
         steps=[
-            ("features", FlightFeatureEngineer(categorical=categorical, frequency=frequency)),
+            (
+                "features",
+                FlightFeatureEngineer(
+                    categorical=categorical, frequency=frequency, numeric=numeric
+                ),
+            ),
             ("preprocess", transformer),
         ]
     )
