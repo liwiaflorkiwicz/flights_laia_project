@@ -19,6 +19,7 @@ load_error = None
 async def lifespan(app: FastAPI):
     global model_pipeline, load_error
 
+    # checks
     print(f"MAIN FILE: {Path(__file__).resolve()}")
     print(f"PROJECT ROOT: {PROJECT_ROOT}")
     print(f"MODEL PATH: {MODEL_PATH}")
