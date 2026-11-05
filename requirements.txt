@@ -9,6 +9,7 @@ appdirs==1.4.4
 asyncssh==2.23.1
 atpublic==9.0.0
 attrs==26.1.0
+bcrypt==5.0.0
 billiard==4.3.1
 celery==5.6.3
 certifi==2026.10.23
@@ -33,6 +34,7 @@ dvc-gdrive==3.0.1
 dvc-http==2.32.0
 dvc-objects==5.2.0
 dvc-render==1.0.2
+dvc-ssh==4.3.0
 dvc-studio-client==0.23.0
 dvc-task==0.40.2
 entrypoints==0.4.2
@@ -110,6 +112,7 @@ shtab==1.13.0
 six==1.17.0
 smmap==5.0.3
 sqltrie==0.11.3
+sshfs==2026.8.0
 tabulate==0.10.0
 threadpoolctl==3.7.0
 tomlkit==0.15.2
