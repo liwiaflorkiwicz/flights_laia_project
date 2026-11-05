@@ -24,6 +24,37 @@ data:
     test_size: 0.15
 
 features:
+  # Year-specific seasonality (MONTH, day-of-year, week, quarter and their
+  # cyclical encodings) is deliberately excluded. With only 2022-2023 data
+  # it encodes the weather of those specific months and caused severe
+  # over-prediction of delays on future months (see reports/feature_ablation.json).
+  # Day-of-month and day-of-week are kept: they capture holidays/weekly
+  # patterns without tying the model to a particular year.
+  numeric:
+    - day_of_month
+    - day_of_week
+    - is_weekend
+    - dow_sin
+    - dow_cos
+    - dep_hour
+    - dep_minute
+    - dep_minutes
+    - dep_time_sin
+    - dep_time_cos
+    - arr_hour
+    - arr_minute
+    - arr_minutes
+    - arr_time_sin
+    - arr_time_cos
+    - is_red_eye
+    - is_overnight
+    - dep_period
+    - crs_elapsed_time
+    - distance
+    - distance_per_minute
+    - implied_speed_mph
+    - schedule_buffer_min
+    - same_state
   # Columns that are known before scheduled departure. Anything measured
   # after departure (DepDelay, TaxiOut, AirTime, delay causes, ...) is
   # deliberately excluded to avoid target leakage.
@@ -57,10 +88,13 @@ model:
     reg_alpha: 0.1
     reg_lambda: 1.0
     max_bin: 127
-    class_weight: balanced
     n_jobs: -1
     random_state: 42
     verbose: -1
+  # Mild inverse-frequency weighting. 0 = no weighting, 1 = full "balanced".
+  # Values around 0.75 keep good minority-class recall without the severe
+  # on-time over-prediction caused by full balancing.
+  class_weight_power: 0.75
   early_stopping_rounds: 100
   # Metric used by early stopping on the validation set. "macro_f1" uses a
   # custom LightGBM metric and matches the primary evaluation metric.

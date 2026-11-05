@@ -345,9 +345,7 @@ def main() -> None:
 
         artifacts = [metrics_path, metadata_path]
         report_path = resolve_path(cfg["evaluation"]["report_path"])
-        importance_path = resolve_path(
-            cfg["evaluation"].get("importance_path", "reports/feature_importance.csv")
-        )
+        importance_path = REPO_ROOT / "reports" / "feature_importance.csv"
         split_summary_path = split_dir / "split_summary.json"
         artifacts.extend(
             [
@@ -552,9 +550,7 @@ def main() -> None:
 
     feature_names = preprocessor.get_feature_names_out()
     importance = classifier.booster_.feature_importance(importance_type="gain")
-    importance_path = resolve_path(
-        cfg["evaluation"].get("importance_path", "reports/feature_importance.csv")
-    )
+    importance_path = REPO_ROOT / "reports" / "feature_importance.csv"
     importance_path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame({"feature": feature_names, "gain": importance}).sort_values(
         "gain", ascending=False
