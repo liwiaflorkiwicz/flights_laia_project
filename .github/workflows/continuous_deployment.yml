@@ -7,43 +7,39 @@ on:
 
 jobs:
   deploy-to-vm2:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted  # inside VM2!
 
     steps:
-      - name: Deploy & Restart Container on VM2 via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout latest code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          host: ${{ secrets.VM2_HOST }}
-          username: ${{ secrets.VM2_USERNAME }}
-          password: ${{ secrets.VM2_PASSWORD }}
-          script: |
-            cd ~/flights_laia_project || cd flights_laia_project
-            
-            git fetch origin
-            git checkout feat/api-docker
-            git pull origin feat/api-docker
-            
-            # generate model if missing
-            if [ ! -f models/model.joblib ]; then
-              echo "Creating baseline model.joblib on VM2..."
-              python3 -m src.modeling.train --config configs/train.yaml --max-train-rows 50000 --no-mlflow
-            fi
-            
-            docker build -t flights-api:latest .
-            
-            # rm old container if exists
-            docker stop flights_api_prod || true
-            docker rm flights_api_prod || true
-            
-            # new container
-            docker run -d \
-              --name flights_api_prod \
-              -p 8000:8000 \
-              -e MLFLOW_TRACKING_URI="http://10.17.0.190:5050" \
-              --restart always \
-              flights-api:latest
-            
-            # health check
-            sleep 5
-            echo "Verifying deployment health on VM2..."
-            curl -f http://localhost:8000/health
+          python-version: "3.11"
+
+      - name: Prepare Data Splits & Train Baseline Model (if missing)
+        run: |
+          if [ ! -f models/model.joblib ]; then
+            echo "Generating model on VM2..."
+            pip install -r requirements.txt
+            python3 -m src.data.prepare_splits --config configs/train.yaml
+            python3 -m src.modeling.train --config configs/train.yaml --max-train-rows 50000 --no-mlflow
+          fi
+
+      - name: Build & Restart Production Docker Container
+        run: |
+          docker build -t flights-api:latest .
+          docker stop flights_api_prod || true
+          docker rm flights_api_prod || true
+          docker run -d \
+            --name flights_api_prod \
+            -p 8000:8000 \
+            -e MLFLOW_TRACKING_URI="http://10.17.0.190:5050" \
+            --restart always \
+            flights-api:latest
+
+      - name: Verify Live Health Endpoint
+        run: |
+          sleep 5
+          curl -f http://localhost:8000/health

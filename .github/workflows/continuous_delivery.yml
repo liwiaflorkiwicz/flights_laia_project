@@ -24,6 +24,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Prepare Data Splits & Train Model
+        run: |
+          python -m src.data.prepare_splits --config configs/train.yaml
+          python -m src.modeling.train --config configs/train.yaml --max-train-rows 50000 --no-mlflow
+
       - name: Train Flight Delay Model
         run: |
           python -m src.modeling.train --config configs/train.yaml --max-train-rows 100000 --no-mlflow
