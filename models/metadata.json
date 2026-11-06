@@ -1,6 +1,6 @@
 {
-  "created_at": "2026-11-03T16:59:21.343721+00:00",
-  "git_commit": "c31812b",
+  "created_at": "2026-11-04T13:37:18.552255+00:00",
+  "git_commit": "ec0b13b",
   "python_version": "3.12.10",
   "lightgbm_version": "4.6.0",
   "target": "DELAY_SEVERITY",
@@ -14,17 +14,11 @@
     "on_time",
     "severe_delay"
   ],
-  "n_features": 41,
+  "n_features": 35,
   "feature_names": [
-    "month",
     "day_of_month",
     "day_of_week",
-    "day_of_year",
-    "week_of_year",
-    "quarter",
     "is_weekend",
-    "month_sin",
-    "month_cos",
     "dow_sin",
     "dow_cos",
     "dep_hour",
@@ -58,8 +52,8 @@
     "freq_DEST",
     "freq_ROUTE"
   ],
-  "best_iteration": 354,
-  "training_seconds": 610.97,
+  "best_iteration": 21,
+  "training_seconds": 287.77,
   "splits": {
     "train": {
       "rows": 11550058
@@ -135,99 +129,99 @@
   "metrics": {
     "val": {
       "n_samples": 1158416,
-      "accuracy": 0.6629803110454275,
-      "balanced_accuracy": 0.4218084542124167,
-      "macro_precision": 0.38288489929708763,
-      "macro_recall": 0.4218084542124167,
-      "macro_f1": 0.38287362299739075,
-      "weighted_f1": 0.7104750761554228,
-      "quadratic_weighted_kappa": 0.12712314500158983,
+      "accuracy": 0.766266177262745,
+      "balanced_accuracy": 0.400132196251433,
+      "macro_precision": 0.3938975123315028,
+      "macro_recall": 0.400132196251433,
+      "macro_f1": 0.3939518817369392,
+      "weighted_f1": 0.7695836129431523,
+      "quadratic_weighted_kappa": 0.13247712299995118,
       "per_class": {
         "on_time": {
-          "precision": 0.8891643160738283,
-          "recall": 0.7231445692626403,
-          "f1": 0.7976069005124088,
+          "precision": 0.8756485347117086,
+          "recall": 0.8683730283505025,
+          "f1": 0.8719956059753862,
           "support": 989083
         },
         "moderate_delay": {
-          "precision": 0.17126532564832606,
-          "recall": 0.35857774044247714,
-          "f1": 0.23181178510165557,
+          "precision": 0.21007650826406057,
+          "recall": 0.17432533945057874,
+          "f1": 0.1905384109439076,
           "support": 123803
         },
         "severe_delay": {
-          "precision": 0.08822505616910857,
-          "recall": 0.18370305293213265,
-          "f1": 0.11920218337810778,
+          "precision": 0.09596749401873905,
+          "recall": 0.15769822095321767,
+          "f1": 0.11932162829152368,
           "support": 45530
         }
       },
       "confusion_matrix": [
         [
-          715250,
-          201734,
-          72099
+          858893,
+          75714,
+          54476
         ],
         [
-          65070,
-          44393,
-          14340
+          89060,
+          21582,
+          13161
         ],
         [
-          24087,
-          13079,
-          8364
+          32912,
+          5438,
+          7180
         ]
       ],
-      "log_loss": 1.201135968978983
+      "log_loss": 1.2388052178236248
     },
     "test": {
       "n_samples": 566941,
-      "accuracy": 0.41049068597966987,
-      "balanced_accuracy": 0.42195484397275945,
-      "macro_precision": 0.3688019681649135,
-      "macro_recall": 0.42195484397275945,
-      "macro_f1": 0.29474351405257865,
-      "weighted_f1": 0.5058418154078632,
-      "quadratic_weighted_kappa": 0.07213709840823102,
+      "accuracy": 0.7485117498999014,
+      "balanced_accuracy": 0.395348433546244,
+      "macro_precision": 0.38842548942842997,
+      "macro_recall": 0.395348433546244,
+      "macro_f1": 0.3890843569147599,
+      "weighted_f1": 0.75099193429285,
+      "quadratic_weighted_kappa": 0.12710567510600113,
       "per_class": {
         "on_time": {
-          "precision": 0.9010439173053743,
-          "recall": 0.4145981062730751,
-          "f1": 0.5678917138380782,
+          "precision": 0.8637086731802082,
+          "recall": 0.8579474578683433,
+          "f1": 0.8608184260842996,
           "support": 477788
         },
         "moderate_delay": {
-          "precision": 0.13575014999842108,
-          "recall": 0.3382857502596871,
-          "f1": 0.1937504788775561,
+          "precision": 0.19372930344735179,
+          "recall": 0.15929050332084738,
+          "f1": 0.17483006710945664,
           "support": 63538
         },
         "severe_delay": {
-          "precision": 0.06961183719094516,
-          "recall": 0.5129806753855163,
-          "f1": 0.12258834944210173,
+          "precision": 0.10783849165773,
+          "recall": 0.1688073394495413,
+          "f1": 0.1316045775505235,
           "support": 25615
         }
       },
       "confusion_matrix": [
         [
-          198090,
-          130416,
-          149282
+          409917,
+          39287,
+          28584
         ],
         [
-          15705,
-          21494,
-          26339
+          46228,
+          10121,
+          7189
         ],
         [
-          6050,
-          6425,
-          13140
+          18456,
+          2835,
+          4324
         ]
       ],
-      "log_loss": 1.1572829240109266
+      "log_loss": 1.235011150570189
     }
   },
   "config": {
@@ -247,6 +241,32 @@
       }
     },
     "features": {
+      "numeric": [
+        "day_of_month",
+        "day_of_week",
+        "is_weekend",
+        "dow_sin",
+        "dow_cos",
+        "dep_hour",
+        "dep_minute",
+        "dep_minutes",
+        "dep_time_sin",
+        "dep_time_cos",
+        "arr_hour",
+        "arr_minute",
+        "arr_minutes",
+        "arr_time_sin",
+        "arr_time_cos",
+        "is_red_eye",
+        "is_overnight",
+        "dep_period",
+        "crs_elapsed_time",
+        "distance",
+        "distance_per_minute",
+        "implied_speed_mph",
+        "schedule_buffer_min",
+        "same_state"
+      ],
       "categorical": [
         "OP_UNIQUE_CARRIER",
         "ORIGIN",
@@ -278,11 +298,11 @@
         "reg_alpha": 0.1,
         "reg_lambda": 1.0,
         "max_bin": 127,
-        "class_weight": "balanced",
         "n_jobs": -1,
         "random_state": 42,
         "verbose": -1
       },
+      "class_weight_power": 0.75,
       "early_stopping_rounds": 100,
       "eval_metric": "macro_f1"
     },
@@ -307,7 +327,7 @@
     },
     "mlflow": {
       "enabled": true,
-      "tracking_uri": "mlruns",
+      "tracking_uri": "sqlite:///mlflow.db",
       "experiment_name": "flight-delay-severity",
       "registered_model_name": "flight-delay-severity",
       "register_model": false,

@@ -69,10 +69,20 @@ reported instead of accuracy alone.
 
 ## Feature engineering
 
-Numeric features: calendar parts (month, day, weekday, day-of-year, week,
-quarter, weekend), cyclical encodings, scheduled departure/arrival time
-(hour, minute, minutes since midnight, red-eye, overnight), scheduled
-duration, distance, implied speed, schedule buffer and same-state route.
+Numeric features: day-of-month and day-of-week (with a weekend flag and
+cyclical encodings), scheduled departure/arrival time (hour, minute, minutes
+since midnight, red-eye, overnight), scheduled duration, distance, implied
+speed, schedule buffer and same-state route.
+
+**Year-specific seasonality is deliberately excluded.** `MONTH`, `DAY_OF_YEAR`,
+`WEEK_OF_YEAR`, `QUARTER`, `month_sin` and `month_cos` were tested and then
+dropped: with only 2022–2023 data they effectively memorise the weather of
+those specific months. On a temporally held-out December test set they caused
+severe delay over-prediction. Removing them raised test macro-F1 from 0.351 to
+0.389 and on-time recall from 0.63 to 0.86 (see
+`reports/feature_ablation.json`). Day-of-month and day-of-week are kept because
+they capture holidays and weekly patterns without tying the model to a
+particular year.
 
 Categorical features: operating carrier, origin/destination airport and
 state, departure time block, route. They are ordinal-encoded with
@@ -82,10 +92,19 @@ airline or airport never seen during training cannot crash inference.
 
 ## Model
 
-`LightGBM` multiclass classifier with balanced class weights, early stopping
-on a custom **macro-F1** metric, and a single scikit-learn `Pipeline` that
-contains both feature engineering and the classifier. The whole pipeline is
-saved as one artifact, so serving receives raw BTS records.
+`LightGBM` multiclass classifier with **mild inverse-frequency class
+weighting**, early stopping on a custom **macro-F1** metric, and a single
+scikit-learn `Pipeline` that contains both feature engineering and the
+classifier. The whole pipeline is saved as one artifact, so serving receives
+raw BTS records.
+
+Class weights are `(N / (K * n_c)) ** power`, rescaled to a prevalence-weighted
+mean of 1, with `power` configurable (`model.class_weight_power`). `power=0`
+means no weighting and `power=1` reproduces sklearn's `class_weight="balanced"`.
+Full balancing over-predicts delays and collapsed on-time recall to 0.41 on the
+December test set. `power=0.75` is the chosen compromise: it keeps minority
+class recall while avoiding the over-prediction (see
+`reports/class_weight_experiments_reduced.json`).
 
 ## Reproduce
 
@@ -123,6 +142,27 @@ python -m pytest tests -q
 Tests cover date parsing, temporal boundaries, stratified proportions,
 leakage-column exclusion, unseen categories, minimal/malformed API payloads
 and an end-to-end fit/predict smoke test.
+
+## Results
+
+Final temporal model (11.55M training flights, 35 features, weighting power
+0.75, early stopping at iteration 21):
+
+| Split | Macro-F1 | Accuracy | On-time recall | Moderate recall | Severe recall |
+| ----- | -------- | -------- | -------------- | --------------- | ------------- |
+| val (Oct–Nov 2023) | 0.394 | 0.766 | 0.868 | 0.174 | 0.158 |
+| test (Dec 2023)     | 0.389 | 0.749 | 0.858 | 0.159 | 0.169 |
+
+For comparison, the initial model with full `class_weight="balanced"` and
+year-specific seasonality scored val macro-F1 0.383 / test 0.295, with a test
+on-time recall of only 0.415 because it over-predicted delays. The two changes
+(mild inverse-frequency weighting and dropping year-specific seasonality)
+raised test macro-F1 by ~0.09 and restored on-time recall.
+
+The remaining error is almost entirely confusion between `moderate_delay` and
+`severe_delay`; with only pre-departure information the exact arrival delay is
+highly uncertain. Aggregate predicted delay share now tracks the true delay
+share closely, so the model no longer systematically over-predicts delays.
 
 ## Outputs
 

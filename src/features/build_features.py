@@ -252,14 +252,6 @@ class FlightFeatureEngineer(BaseEstimator, TransformerMixin):
                 values = _series(X, column, MISSING_CATEGORY).astype("string")
             out[column] = values.fillna(MISSING_CATEGORY).astype(object)
 
-        # Configured numeric columns that are not derived above (for example
-        # weather features joined onto the splits) are passed through as-is.
-        # Missing columns become NaN, so the same pipeline accepts payloads
-        # with or without those optional features.
-        for column in self._numeric_columns():
-            if column not in out:
-                out[column] = _numeric(X, column)
-
         transformed = pd.DataFrame(out, index=index)
         # Keep memory predictable on the 13M-row dataset and support feature
         # subsets for ablation studies.
