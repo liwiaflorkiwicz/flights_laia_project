@@ -24,7 +24,7 @@ jobs:
             echo "Generating model on VM2..."
             pip install -r requirements.txt
             pip install dvc
-            dvc pull
+            dvc pull --force -v
             python3 -m src.data.prepare_splits --config configs/train.yaml
             python3 -m src.modeling.train --config configs/train.yaml --max-train-rows 50000 --no-mlflow
           fi

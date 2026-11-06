@@ -26,7 +26,7 @@ jobs:
 
       - name: Pull data via DVC
         run: |
-          dvc pull -v
+          dvc pull --force -v
 
       - name: Prepare Data Splits & Train Model
         run: |
