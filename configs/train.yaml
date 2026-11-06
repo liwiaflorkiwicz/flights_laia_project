@@ -121,7 +121,8 @@ mlflow:
   enabled: true
   # Overridden by the MLFLOW_TRACKING_URI environment variable when set.
   # MLflow 3.x no longer supports the legacy ./mlruns file store.
-  tracking_uri: sqlite:///mlflow.db
+  # tracking_uri: sqlite:///mlflow.db
+  tracking_uri: "http://10.17.0.190:5050"
   experiment_name: flight-delay-severity
   registered_model_name: flight-delay-severity
   # Remote registries only: local file stores cannot host a model registry.
