@@ -24,6 +24,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Pull data via DVC
+        run: |
+          dvc pull -v
+
       - name: Prepare Data Splits & Train Model
         run: |
           python -m src.data.prepare_splits --config configs/train.yaml
