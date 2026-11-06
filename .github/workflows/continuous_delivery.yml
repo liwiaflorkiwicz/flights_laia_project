@@ -7,7 +7,7 @@ on:
 
 jobs:
   train-and-package-model:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository code
@@ -23,10 +23,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          #pip install "dvc[ssh]"
 
-      - name: Prepare Data Splits & Train Model
+      #- name: Pull Dataset via DVC
+        # run: |
+         # dvc pull data/processed/flights_2022_2023.parquet.dvc --force
+
+      - name: Prepare Data Splits
         run: |
-          python -m src.data.prepare_splits --config configs/train.yaml || true
+          python -m src.data.prepare_splits --config configs/train.yaml 
 
       - name: Train Flight Delay Model
         run: |

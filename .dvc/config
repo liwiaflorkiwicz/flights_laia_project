@@ -3,3 +3,4 @@
     remote = vm1-storage
 ['remote "vm1-storage"']
     url = ssh://admin@10.17.0.190:/home/admin/dvc_storage
+    user = admin
