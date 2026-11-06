@@ -25,10 +25,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Ensure dummy model exists for testing
+        run: |
+          if [ ! -f models/model.joblib ]; then
+            echo "Generating lightweight dummy model for pytest..."
+            python -m src.modeling.train --config configs/train.yaml --max-train-rows 10000 --no-mlflow
+          fi
+
       - name: Run unit & integration tests
         run: |
-          python -m pytest tests/
+          pytest tests/
 
       - name: Build Docker Image
         run: |
-          docker build -t flight-delay-api:test .
+          docker build -t flights-api:latest .

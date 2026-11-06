@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  flight-api:
+    build: .
+    container_name: flight_api_prod
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://10.17.0.190:5050  # Adres VM1 from MLflow
+    restart: always
