@@ -1,4 +1,4 @@
-name: Continuous Deployment - Flight Delay API
+name: Continuous Delivery - Flight Delay API
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy-to-vm2:
-    runs-on: self-hosted  # inside VM2!
+    runs-on: self-hosted
 
     steps:
       - name: Checkout latest code
@@ -36,7 +36,7 @@ jobs:
           docker run -d \
             --name flights_api_prod \
             -p 8000:8000 \
-            -e MLFLOW_TRACKING_URI="http://10.17.0.190:5050" \
+            -e MLFLOW_TRACKING_URI="http://10.17.0.190:5050" \ # VM1 MLflow address
             --restart always \
             flights-api:latest
 

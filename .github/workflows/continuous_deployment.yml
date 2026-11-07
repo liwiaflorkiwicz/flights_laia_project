@@ -1,4 +1,4 @@
-name: Continuous Delivery - Flight Delay API
+name: Continuous Deployment - Flight Delay API
 
 on:
   push:
