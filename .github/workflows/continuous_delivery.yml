@@ -25,9 +25,9 @@ jobs:
           pip install -r requirements.txt
           pip install "dvc[ssh]"
 
-      - name: Pull Dataset via DVC (please work)
+      - name: Pull Dataset via DVC
         run: |
-         dvc pull --force
+         dvc pull data/processed/flights_2022_2023.parquet --force
 
       - name: Prepare Data Splits
         run: |
