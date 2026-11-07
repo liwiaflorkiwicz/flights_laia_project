@@ -1,4 +1,4 @@
-name: Continuous Deployment - Flight Delay API
+name: Continuous Delivery - Flight Delay API
 
 on:
   push:
@@ -6,41 +6,40 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-to-vm2:
-    runs-on: self-hosted  # inside VM2!
+  train-and-package-model:
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout latest code
+      - name: Checkout repository code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Prepare Data Splits & Train Baseline Model (if missing)
+      - name: Install dependencies
         run: |
-          if [ ! -f models/model.joblib ]; then
-            echo "Generating model on VM2..."
-            pip install -r requirements.txt
-            dvc pull data/processed/flights_2022_2023.parquet --force
-            python3 -m src.data.prepare_splits --config configs/train.yaml 
-            python3 -m src.modeling.train --config configs/train.yaml --max-train-rows 50000 --no-mlflow
-          fi
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install "dvc[ssh]"
 
-      - name: Build & Restart Production Docker Container
+      - name: Pull Dataset via DVC
         run: |
-          docker build -t flights-api:latest .
-          docker stop flights_api_prod || true
-          docker rm flights_api_prod || true
-          docker run -d \
-            --name flights_api_prod \
-            -p 8000:8000 \
-            -e MLFLOW_TRACKING_URI="http://10.17.0.190:5050" \
-            --restart always \
-            flights-api:latest
+         dvc pull data/processed/flights_2022_2023.parquet --force
 
-      - name: Verify Live Health Endpoint
+      - name: Prepare Data Splits
         run: |
-          sleep 5
-          curl -f http://localhost:8000/health
+          python -m src.data.prepare_splits --config configs/train.yaml 
+
+      - name: Train Flight Delay Model
+        run: |
+          python -m src.modeling.train --config configs/train.yaml --max-train-rows 100000 --no-mlflow
+
+      - name: Upload Trained Model Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-artifact
+          path: models/model.joblib
+          retention-days: 7
