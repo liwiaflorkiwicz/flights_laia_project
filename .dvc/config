@@ -1,6 +1,5 @@
 [core]
     autostage = true
-    remote = vm1-storage
-['remote "vm1-storage"']
-    url = ssh://admin@10.17.0.190:/home/admin/dvc_storage
-    user = admin
+    remote = vm1_storage
+['remote "vm1_storage"']
+    url = ssh://admin@10.17.0.190/home/admin/dvc_storage

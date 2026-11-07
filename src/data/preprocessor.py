@@ -48,7 +48,7 @@ class FlightFeatureExtractor(BaseEstimator, TransformerMixin):
             df["MONTH"] = dt.dt.month.fillna(0).astype(int)
             df["DAY_OF_MONTH"] = dt.dt.day.fillna(0).astype(int)
             # Pandas dayofweek is 0=Mon..6=Sun; BTS standard is 1=Mon..7=Sun
-            df["DAY_OF_WEEK"] = (dt.dt.dayofweek + 1).fillna(0).astype(int)
+            df["DAY_OF_WEEK"] = (dt.dt.day_of_week + 1).fillna(0).astype(int)
 
         # B. Convert HHMM integer times (e.g. 1430 -> 14*60 + 30 = 870 minutes)
         for col in ["CRS_DEP_TIME", "CRS_ARR_TIME"]:
