@@ -30,7 +30,7 @@ jobs:
 
       - name: Build & Restart Production Docker Container
         run: |
-          docker build -t flights-api:latest .
+          docker build -f docker/Dockerfile -t flights-api:latest .
           docker stop flights_api_prod || true
           docker rm flights_api_prod || true
           docker run -d \
