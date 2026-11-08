@@ -47,7 +47,7 @@ jobs:
 
       - name: Build Docker Image (Delivery Check)
         run: |
-          docker build -t flights-api:latest .
+          docker build -f docker/Dockerfile -t flights-api:latest .
 
       - name: Upload Model Artifact
         uses: actions/upload-artifact@v4

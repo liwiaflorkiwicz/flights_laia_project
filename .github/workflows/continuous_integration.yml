@@ -1,4 +1,4 @@
-name: Continuous Integration - Flight Delay API
+name: 1. Continuous Integration - Flight Delay API
 
 on:
   push:
@@ -38,4 +38,4 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t flights-api:latest .
+          docker build -f docker/Dockerfile -t flights-api:latest .
