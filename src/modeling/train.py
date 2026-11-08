@@ -274,6 +274,14 @@ def log_to_mlflow(
         )
 
         registered_name = None
+        custom_types = [
+            "collections.OrderedDict",
+            "lightgbm.basic.Booster",
+            "lightgbm.sklearn.LGBMClassifier",
+            "src.features.build_features.FlightFeatureEngineer",
+            "src.features.build_features.FrequencyEncoder",
+        ]
+
         if register:
             registered_name = cfg["mlflow"].get("registered_model_name")
         try:
