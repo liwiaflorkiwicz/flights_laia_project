@@ -29,6 +29,11 @@ jobs:
           pip install -r requirements.txt
           pip install "dvc[ssh]"
 
+      - name: Setup SSH for DVC Remote
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DVC_SSH_PRIVATE_KEY }}
+
       - name: Pull Dataset via DVC
         run: |
           dvc pull data/processed/flights_2022_2023.parquet --force
@@ -49,9 +54,18 @@ jobs:
         run: |
           docker build -f docker/Dockerfile -t flights-api:latest .
 
+      - name: Deploy API Container
+        run: |
+          docker compose down || true
+          docker compose up -d --build
+
       - name: Upload Model Artifact
         uses: actions/upload-artifact@v4
         with:
           name: model-artifact
           path: models/model.joblib
           retention-days: 7
+
+      - name: Clean up Docker system
+        run: |
+          docker image prune -f
