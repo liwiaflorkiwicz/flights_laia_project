@@ -13,12 +13,32 @@ departure**:
 | `moderate_delay` | 15 min <= arrival delay < 60 min    |
 | `severe_delay`   | arrival delay >= 60 min             |
 
+---
+
+## System Architecture
+
+The project is structured across two Virtual Machines and GitHub Actions:
+
+- **VM1 (`10.17.0.190`)**: Hosts the central **MLflow Tracking Server** (port 5050) 
+and **DVC SSH Remote Storage** (`/home/admin/dvc_storage`).
+- **VM2 (`10.17.0.216`)**: Hosts the **GitHub Actions Self-Hosted Runner**
+and the production **FastAPI Service** inside a Docker container (port 8000).
+
 ## Repository layout
 
 ```
+.github/workflows/        # CI/CD GitHub Actions pipelines
+    continuous_integration.yml
+    continuous_delivery.yml
 configs/
   train.yaml              # data, split, features, model and MLflow settings
+docker/
+    Dockerfile              # Python 3.13-slim image for production API serving
+    docker-compose.yml        # Docker service orchestration & environment setup
 src/
+  api/
+    main.py               # FastAPI application lifecycle and endpoints
+    schemas.py            # Pydantic input/output payload validation
   data/
     make_dataset.py       # raw BTS CSV -> processed Parquet (DVC stage)
     prepare_splits.py     # memory-safe temporal/stratified splits
@@ -173,10 +193,41 @@ share closely, so the model no longer systematically over-predicts delays.
 - `reports/figures/confusion_matrix_{val,test}.png`
 - `reports/feature_importance.csv`
 
-## Next steps (deployment / monitoring)
+## Deployment / monitoring
 
-The same pipeline artifact is intended for the FastAPI `/classify` endpoint
-(raw BTS field names in, ordered `classifications` out), and for subgroup
-monitoring by operating airline and origin airport. The per-airline/per-airport
-metrics produced here form the reference for future drift and degradation
-checks.
+The pipeline artifact (`models/model.joblib`) is fully integrated into the containerized 
+FastAPI `/classify` endpoint, receiving raw BTS field names in JSON format and returning 
+ordered `classifications` predictions. 
+
+With containerized deployment and automated CI/CD established, the primary operational focus 
+moves to post-deployment monitoring:
+- **Subgroup Monitoring:** Per-airline and per-origin-airport evaluation metrics generated 
+during training (`reports/metrics.json`) serve as the established baseline for detecting operational skew.
+- **Drift & Degradation Checks:** Tracking production inference request payloads against 
+baseline distributions to detect data drift and performance degradation on VM2 before initiating 
+automated retrains via Continuous Delivery (`continuous_delivery.yml`).
+
+## CI/CD Automation Pipeline
+
+Automated workflows are managed via GitHub Actions:
+
+1. **Continuous Integration (`1_continuous_integration.yml`)**:
+   - Runs on `ubuntu-latest` upon `push` and `pull_request`.
+   - Executes `flake8` syntax checks, generates a lightweight dummy model for quick smoke testing, runs `pytest`, and builds the Docker image.
+2. **Continuous Delivery (`2_continuous_delivery.yml`)**:
+   - Runs on `self-hosted` runner (VM2) upon `push` to `main` or manual trigger.
+   - Securely pulls remote data via DVC SSH (`dvc pull`), runs temporal data splitting, trains the LightGBM model, logs runs to MLflow (`CD-${SHA}`),
+   builds the Docker image.
+
+## Deployment & Verification Status
+
+The project checkpoint requirements are fully implemented and verified across the dual-VM architecture:
+
+| Requirement | Implementation Details                                                                                      | Status |
+| :--- |:------------------------------------------------------------------------------------------------------------| :--- |
+| **Baseline Model** | LightGBM multiclass model with inverse-frequency weighting (`power=0.75`)                                   | Verified |
+| **Code & Data Versioning** | Git repository paired with DVC tracking over SSH (`vm1_storage`)                                            | Verified |
+| **Experiment Tracking** | MLflow tracking server running on VM1 (`10.17.0.190:5050`)                                                  | Verified |
+| **CI/CD Automation** | GitHub Actions workflows (`continuous_integration.yml` on push/PR, `continuous_delivery.yml` on VM2 runner) | Verified |
+| **Containerized Deployment** | FastAPI application served inside Docker container (`flight_api_prod`)                                      | Verified |
+| **Endpoint Registration** | `POST /classify` and interactive OpenAPI documentation at `/docs` (VM2: `10.17.0.216:8000`)                 | Verified |
