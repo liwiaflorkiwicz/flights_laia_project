@@ -43,11 +43,24 @@ jobs:
           MLFLOW_EXPERIMENT_NAME: ${{ env.MLFLOW_EXPERIMENT_NAME }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
-          python -m src.modeling.train --config configs/train.yaml --max-train-rows 100000  --run-name "CD-${{ github.sha }}"
+          python -m src.modeling.train --config configs/train.yaml --max-train-rows 100000 --run-name "CD-${{ github.sha }}"
 
-      - name: Build Docker Image (Delivery Check)
+      - name: Build Docker Image
         run: |
           docker build -f docker/Dockerfile -t flights-api:latest .
+
+      - name: Verify API Container Startup
+        run: |
+          docker rm -f test-api-cd || true
+          docker run -d --name test-api-cd -p 8000:8000 flights-api:latest
+          sleep 5
+          curl -f http://localhost:8000/health || (docker logs test-api-cd && exit 1)
+
+      - name: Cleanup Test Container
+        if: always()
+        run: |
+          docker stop test-api-cd || true
+          docker rm test-api-cd || true
 
       - name: Upload Model Artifact
         uses: actions/upload-artifact@v4
