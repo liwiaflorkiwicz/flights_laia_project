@@ -29,11 +29,6 @@ jobs:
           pip install -r requirements.txt
           pip install "dvc[ssh]"
 
-      - name: Setup SSH for DVC Remote
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DVC_SSH_PRIVATE_KEY }}
-
       - name: Pull Dataset via DVC
         run: |
           dvc pull data/processed/flights_2022_2023.parquet --force
