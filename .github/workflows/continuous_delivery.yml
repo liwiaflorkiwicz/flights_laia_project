@@ -49,10 +49,10 @@ jobs:
         run: |
           docker build -f docker/Dockerfile -t flights-api:latest .
 
-      - name: Deploy API Container
-        run: |
-          docker-compose down || true
-          docker-compose up -d --build
+      #- name: Deploy API Container
+      #  run: |
+      #    docker compose down || true
+      #    docker compose up -d --build
 
       - name: Upload Model Artifact
         uses: actions/upload-artifact@v4
