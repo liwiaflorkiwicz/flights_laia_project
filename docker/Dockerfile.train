@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt "dvc[ssh]"
 COPY configs/ ./configs/
 COPY src/ ./src/
 COPY .dvc/ ./.dvc/
-COPY dvc.yaml dvc.lock ./
+COPY data/processed/flights_2022_2023.parquet.dvc ./data/processed/
 
 # main entry point
 COPY docker/train_entrypoint.sh /train_entrypoint.sh
