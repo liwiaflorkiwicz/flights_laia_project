@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  MLFLOW_TRACKING_URI: "http://10.17.0.190:5050"
-  MLFLOW_EXPERIMENT_NAME: "flight-delay-severity-ci"
-
 jobs:
   ci-pipeline:
     runs-on: ubuntu-latest
@@ -34,17 +30,21 @@ jobs:
         run: |
           flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      - name: Ensure dummy model exists for testing
+      - name: Generate dummy model for local API tests
         run: |
-          if [ ! -f models/model.joblib ]; then
-            echo "Generating lightweight dummy model for pytest..."
-            python -m src.modeling.train --config configs/train.yaml --max-train-rows 10000 --no-mlflow
-          fi
+          mkdir -p models
+          python -m src.modeling.train --config configs/train.yaml --max-train-rows 5000 --no-mlflow
 
       - name: Run unit & integration tests
+        env:
+          LOCAL_MODEL_PATH: "models/model.joblib"
         run: |
-          pytest tests/
+          pytest tests/ -v
 
-      - name: Build Docker Image
+      - name: Build Training Docker Image (Smoke Check)
         run: |
-          docker build -f docker/Dockerfile -t flights-api:latest .
+          docker build -f docker/Dockerfile.train -t flights-trainer:ci-test .
+
+      - name: Build Serving Docker Image (Smoke Check)
+        run: |
+          docker build -f docker/Dockerfile.serve -t flights-serving:ci-test .

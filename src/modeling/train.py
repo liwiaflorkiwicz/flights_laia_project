@@ -274,13 +274,6 @@ def log_to_mlflow(
         )
 
         registered_name = None
-        custom_types = [
-            "collections.OrderedDict",
-            "lightgbm.basic.Booster",
-            "lightgbm.sklearn.LGBMClassifier",
-            "src.features.build_features.FlightFeatureEngineer",
-            "src.features.build_features.FrequencyEncoder",
-        ]
 
         if register:
             registered_name = cfg["mlflow"].get("registered_model_name")
@@ -289,7 +282,8 @@ def log_to_mlflow(
                 pipeline,
                 name="model",
                 input_example=input_example,
-                registered_model_name=registered_name,
+                #registered_model_name=registered_name,
+                registered_model_name="flight-delay-model",
             )
         except Exception as exc:  # registry/file-store limitations, etc.
             print(f"WARNING: could not log model to MLflow ({exc}). Artifacts are still saved locally.")

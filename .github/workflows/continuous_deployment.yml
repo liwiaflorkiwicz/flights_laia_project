@@ -1,0 +1,27 @@
+name: 3. Continuous Deployment - Serve Model
+
+on:
+  workflow_run:
+    workflows: ["2. Continuous Delivery - Train Model & Build Image"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  deploy-api:
+    runs-on: self-hosted
+    # only id 2.CD was success
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Build and Restart Serving Container
+        run: |
+          docker compose build api
+          docker compose up -d --force-recreate api
+
+      - name: Verify Production API Health
+        run: |
+          sleep 5
+          curl -f http://localhost:8000/health

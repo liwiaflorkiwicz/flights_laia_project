@@ -1,0 +1,26 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# download libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 git openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt "dvc[ssh]"
+
+# copy code, config and dvc metadata
+COPY configs/ ./configs/
+COPY src/ ./src/
+COPY .dvc/ ./.dvc/
+COPY dvc.yaml dvc.lock ./
+
+# main entry point
+COPY docker/train_entrypoint.sh /train_entrypoint.sh
+RUN chmod +x /train_entrypoint.sh
+
+ENTRYPOINT ["/train_entrypoint.sh"]

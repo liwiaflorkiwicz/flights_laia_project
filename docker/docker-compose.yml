@@ -1,11 +1,44 @@
 version: '3.8'
 
+#services:
+#  flight-api:
+#    build: ..
+#    container_name: flight_api_prod
+#    ports:
+#      - "8000:8000"
+#    environment:
+#      - MLFLOW_TRACKING_URI=http://10.17.0.190:5050  # Adres VM1 from MLflow
+#    restart: always
+
+
 services:
-  flight-api:
-    build: ..
+  # 1: Training container
+  trainer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.train
+    image: flights-trainer:latest
+    container_name: flight_trainer_job
+    environment:
+      - MLFLOW_TRACKING_URI=http://10.17.0.190:5050   # VM1
+      - MLFLOW_EXPERIMENT_NAME=flight-delay-severity
+    volumes:
+      # Montujemy klucze SSH z VM2 oraz pamięć podręczną danych, aby DVC nie pobierał wszystkiego od zera
+      - ~/.ssh:/root/.ssh:ro
+      - ./data:/app/data
+      - ./.dvc/cache:/app/.dvc/cache
+    profiles:
+      - training
+
+  # 2: API Production container (works 24/7)
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.serve
+    image: flights-serving:latest
     container_name: flight_api_prod
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - MLFLOW_TRACKING_URI=http://10.17.0.190:5050  # Adres VM1 from MLflow
-    restart: always
+      - MLFLOW_TRACKING_URI=http://10.17.0.190:5050     # VM1

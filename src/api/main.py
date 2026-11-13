@@ -5,32 +5,56 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import RedirectResponse
 import joblib
 import pandas as pd
+import os
+import mlflow.sklearn
 
 from src.api.schemas import BatchInferenceRequest, BatchInferenceResponse
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
 
-# Locate model artifact relative to project root
+import joblib
+import mlflow
+import mlflow.sklearn
+from fastapi import FastAPI
+
+# paths and variables
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-MODEL_PATH = PROJECT_ROOT / "models" / "model.joblib"
+DEFAULT_LOCAL_MODEL = PROJECT_ROOT / "models" / "model.joblib"
+
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://10.17.0.190:5050")
+MODEL_URI = os.getenv("MODEL_URI", "models:/flight-delay-model/latest")
+LOCAL_MODEL_PATH = os.getenv("LOCAL_MODEL_PATH")  # only for CI testing
 
 model_pipeline = None
 load_error = None
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load model artifact into memory on application startup."""
+    """Load model artifact into memory on application startup (MLflow Registry or local fallback)."""
     global model_pipeline, load_error
 
     try:
-        model_pipeline = joblib.load(MODEL_PATH)
+        if LOCAL_MODEL_PATH:
+            # only ci tests
+            model_pipeline = joblib.load(LOCAL_MODEL_PATH)
+            print(f"MODEL LOADED LOCALLY (CI MODE): {type(model_pipeline)}")
+        else:
+            # production flow
+            mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+            model_pipeline = mlflow.sklearn.load_model(MODEL_URI)
+            print(f"MODEL LOADED FROM MLFLOW ({MODEL_URI}): {type(model_pipeline)}")
+
         load_error = None
-        print(f"MODEL LOADED: {type(model_pipeline)}")
     except Exception as e:
         model_pipeline = None
         load_error = repr(e)
-        print(f"MODEL LOADING FAILED: {repr(e)}")
+        print(f"MODEL LOADING FAILED: {load_error}")
 
     yield
+
+    # memory cleaning
+    model_pipeline = None
 
 
 app = FastAPI(
@@ -86,3 +110,12 @@ def classify_flights(payload: BatchInferenceRequest) -> BatchInferenceResponse:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"data processing error: {str(e)}",
         )
+
+    import os
+    import mlflow.sklearn
+
+    MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "http://10.17.0.190:5050")
+    mlflow.set_tracking_uri(MLFLOW_URI)
+
+    # Pobranie najnowszej wersji zarejestrowanego modelu z MLflow
+    model = mlflow.sklearn.load_model("models:/flight-delay-model/latest")
