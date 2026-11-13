@@ -1,27 +1,38 @@
-name: 3. Continuous Deployment - Serve Model
+name: 3. Continuous Deployment - Deploy Serving API
 
 on:
   workflow_run:
-    workflows: ["2. Continuous Delivery - Train Model & Build Image"]
+    workflows: ["2. Continuous Delivery - Train & Register Model"]
     types: [completed]
   workflow_dispatch:
 
 jobs:
   deploy-api:
     runs-on: self-hosted
-    # only id 2.CD was success
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
 
-      - name: Build and Restart Serving Container
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull latest Serving Image & Restart API Container
         run: |
-          docker compose build api
+          docker compose pull api
           docker compose up -d --force-recreate api
 
-      - name: Verify Production API Health
+      - name: Verify API Health Endpoint
         run: |
           sleep 5
           curl -f http://localhost:8000/health
+
+      - name: Cleanup old Docker images
+        if: always()
+        run: |
+          docker image prune -f

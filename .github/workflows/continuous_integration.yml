@@ -30,21 +30,73 @@ jobs:
         run: |
           flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      - name: Generate dummy model for local API tests
+      - name: Generate synthetic dummy model for API tests
         run: |
           mkdir -p models
-          python -m src.modeling.train --config configs/train.yaml --max-train-rows 5000 --no-mlflow
+          python -c '
+          import joblib
+          import pandas as pd
+          from lightgbm import LGBMClassifier
+          from sklearn.pipeline import Pipeline
+          from src.features.build_features import build_preprocessor
 
+          df = pd.DataFrame({
+              "YEAR": [2023] * 12,
+              "MONTH": [10] * 12,
+              "DAY_OF_MONTH": list(range(1, 13)),
+              "DAY_OF_WEEK": [1, 2, 3, 4, 5, 6, 7, 1, 2, 3, 4, 5],
+              "FL_DATE": [f"2023-10-{d:02d}" for d in range(1, 13)],
+              "OP_UNIQUE_CARRIER": ["AA", "DL", "WN", "UA"] * 3,
+              "ORIGIN": ["JFK", "LAX", "ORD", "DEN"] * 3,
+              "ORIGIN_STATE_NM": ["New York", "California", "Illinois", "Colorado"] * 3,
+              "DEST": ["LAX", "JFK", "DEN", "ORD"] * 3,
+              "DEST_STATE_NM": ["California", "New York", "Colorado", "Illinois"] * 3,
+              "CRS_DEP_TIME": [800, 1200, 1730, 2100] * 3,
+              "DEP_TIME_BLK": ["0800-0859", "1200-1259", "1700-1759", "2100-2159"] * 3,
+              "CRS_ARR_TIME": [1100, 1500, 2030, 2350] * 3,
+              "CRS_ELAPSED_TIME": [180.0, 240.0, 300.0, 150.0] * 3,
+              "DISTANCE": [1000.0, 1500.0, 2475.0, 800.0] * 3,
+          })
+          y = ["on_time", "moderate_delay", "severe_delay"] * 4
+
+          pipe = Pipeline([
+              ("preprocessor", build_preprocessor()),
+              ("classifier", LGBMClassifier(n_estimators=5, verbose=-1))
+          ])
+          pipe.fit(df, y)
+          joblib.dump(pipe, "models/model.joblib")
+          '
       - name: Run unit & integration tests
         env:
           LOCAL_MODEL_PATH: "models/model.joblib"
         run: |
           pytest tests/ -v
 
-      - name: Build Training Docker Image (Smoke Check)
-        run: |
-          docker build -f docker/Dockerfile.train -t flights-trainer:ci-test .
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build and push Training Image
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.train
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-trainer:latest
       - name: Build Serving Docker Image (Smoke Check)
         run: |
           docker build -f docker/Dockerfile.serve -t flights-serving:ci-test .
+
+      - name: Build and push Serving Image
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.serve
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving:latest

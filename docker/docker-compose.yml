@@ -41,4 +41,5 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MLFLOW_TRACKING_URI=http://10.17.0.190:5050     # VM1
+      - MLFLOW_TRACKING_URI=http://10.17.0.190:5050
+      - MODEL_URI=models:/flight-delay-model/latest

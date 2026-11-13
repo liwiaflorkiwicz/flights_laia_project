@@ -1,38 +1,34 @@
-name: 2. Continuous Delivery - Train Model & Build Image
+name: 2. Continuous Delivery - Train & Register Model
 
 on:
-  push:
-    branches: [ "main", "feat/api-docker" ]
+  workflow_run:
+    workflows: ["1. Continuous Integration - Test & Build Images"]
+    types: [completed]
   workflow_dispatch:
 
-#env:
-#  MLFLOW_TRACKING_URI: "http://10.17.0.190:5050"
-#  MLFLOW_EXPERIMENT_NAME: "flight-delay-severity"
-
 jobs:
-  train-and-package:
+  train-model:
     runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
 
-      - name: Build Training and Serving Images
-        run: |
-          docker compose --profile training build
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Training Container (DVC Pull -> Splits -> Train -> MLflow Register)
+      - name: Pull latest Training Image
+        run: |
+          docker compose --profile training pull trainer
+
+      - name: Run Containerized Training (DVC -> Splits -> Train -> MLflow)
         run: |
           docker compose --profile training run --rm trainer \
             --config configs/train.yaml \
             --max-train-rows 100000 \
             --run-name "CD-${{ github.sha }}"
-
-      - name: Restart Production Serving Container (Pulls Latest Model from MLflow)
-        run: |
-          docker compose up -d --force-recreate api
-
-      - name: Cleanup old Docker layers
-        if: always()
-        run: |
-          docker image prune -f
