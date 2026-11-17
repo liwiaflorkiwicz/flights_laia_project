@@ -1,15 +1,19 @@
-name: 2. Continuous Delivery - Train & Register Model
+v]name: 2. Continuous Delivery - Train, Test Staging & Promote
 
 on:
   workflow_run:
-    workflows: ["1. Continuous Integration - Test & Build Images"]
+    workflows: ["1. Continuous Integration - Test, Build & Push Images"]
     types: [completed]
-    branches: ["main"]
+    branches: ["main", "feat/api-docker"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  train-model:
-    runs-on: self-hosted
+  deliver-to-staging:
+    runs-on: self-hosted    # VM2
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
@@ -23,13 +27,88 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull latest Training Image
+      # pull images
+      - name: Pull latest Trainer and Serving images
         run: |
           docker compose --profile training pull trainer
+          docker compose --profile staging pull api-staging
 
+      # training on real data and registration in MLflow on VM1
       - name: Run Containerized Training (DVC -> Splits -> Train -> MLflow)
         run: |
           docker compose --profile training run --rm trainer \
             --config configs/train.yaml \
             --max-train-rows 100000 \
             --run-name "CD-${{ github.sha }}"
+
+      # test API Staging on port 8001
+      - name: Start Staging API container (port 8001)
+        run: |
+          docker compose --profile staging up -d --force-recreate api-staging
+
+      # Smoke tests on port 8001
+      - name: Run Staging integration smoke tests
+        run: |
+          echo "Waiting for Staging API to load model from MLflow..."
+          for i in {1..15}; do
+            if curl -sf http://localhost:8001/health | grep -q '"model_loaded":true'; then
+              echo "Staging API is healthy and model is loaded!"
+              break
+            fi
+            if [ $i -eq 15 ]; then
+              echo "Staging API failed to become healthy!"
+              docker logs flight_api_staging
+              exit 1
+            fi
+            sleep 2
+          done
+
+          echo "Testing /classify endpoint on Staging..."
+          curl -sf -X POST http://localhost:8001/classify \
+            -H "Content-Type: application/json" \
+            -d '{
+              "YEAR": 2023,
+              "MONTH": 10,
+              "DAY_OF_MONTH": 15,
+              "DAY_OF_WEEK": 7,
+              "FL_DATE": "2023-10-15",
+              "OP_UNIQUE_CARRIER": "AA",
+              "ORIGIN": "JFK",
+              "ORIGIN_STATE_NM": "New York",
+              "DEST": "LAX",
+              "DEST_STATE_NM": "California",
+              "CRS_DEP_TIME": 830,
+              "DEP_TIME_BLK": "0800-0859",
+              "CRS_ARR_TIME": 1145,
+              "CRS_ELAPSED_TIME": 315.0,
+              "DISTANCE": 2475.0
+            }'
+
+      - name: Stop and remove Staging API container
+        if: always()
+        run: |
+          docker compose --profile staging down
+
+      # Promotion to MLflow
+      - name: Promote model to @staging in MLflow
+        run: |
+          docker run --rm --entrypoint python \
+            -e MLFLOW_TRACKING_URI=http://10.17.0.190:5050 \
+            ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:latest -c '
+          import mlflow
+          from mlflow.tracking import MlflowClient
+
+          mlflow.set_tracking_uri("http://10.17.0.190:5050")
+          client = MlflowClient()
+          versions = client.search_model_versions("name=\"flight-delay-model\"")
+          latest_version = max(int(v.version) for v in versions)
+          client.set_registered_model_alias("flight-delay-model", "staging", str(latest_version))
+          print(f"Promoted flight-delay-model version {latest_version} to @staging")
+          '
+
+      # :staging do GHCR
+      - name: Tag and push Serving image as :staging
+        run: |
+          IMAGE_BASE="ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving"
+          docker tag "${IMAGE_BASE}:latest" "${IMAGE_BASE}:staging"
+          docker push "${IMAGE_BASE}:staging"
