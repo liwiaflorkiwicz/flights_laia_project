@@ -4,6 +4,7 @@ on:
   workflow_run:
     workflows: ["1. Continuous Integration - Test & Build Images"]
     types: [completed]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
