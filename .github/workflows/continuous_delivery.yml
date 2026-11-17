@@ -1,4 +1,4 @@
-v]name: 2. Continuous Delivery - Train, Test Staging & Promote
+name: 2. Continuous Delivery - Train, Test Staging & Promote
 
 on:
   workflow_run:
