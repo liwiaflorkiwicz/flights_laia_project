@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "feat/api-docker", "dev" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "feat/api-docker"]
 
 permissions:
   contents: read

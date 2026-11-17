@@ -2,7 +2,7 @@ name: 2. Continuous Delivery - Train, Test Staging & Promote
 
 on:
   workflow_run:
-    workflows: ["1. Continuous Integration - Test, Build & Push Images"]
+    workflows: [" 1. Continuous Integration - Test, Build & Push Images"]
     types: [completed]
     branches: ["main", "feat/api-docker"]
   workflow_dispatch:
