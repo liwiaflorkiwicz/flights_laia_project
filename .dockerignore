@@ -5,8 +5,10 @@
 __pycache__
 *.pyc
 .pytest_cache
-data/raw
-data/interim
-data/processed/*
-!data/processed/*.dvc
+data/**
+!data/**/*.dvc
+!data/*.dvc
+.dvc/cache
+.dvc/tmp
+#models/*.joblib
 models/*.parquet
