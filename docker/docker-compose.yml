@@ -10,8 +10,8 @@ services:
       - MLFLOW_EXPERIMENT_NAME=flight-delay-severity
     volumes:
       - ~/.ssh:/root/.ssh:ro
-      - ./data:/app/data
-      - ./.dvc/cache:/app/.dvc/cache
+      #- ./data:/app/data
+      - ~/.dvc/cache:/app/.dvc/cache
     profiles:
       - training
 
