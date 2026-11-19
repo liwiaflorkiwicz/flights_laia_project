@@ -17,8 +17,6 @@ jobs:
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -81,8 +79,6 @@ jobs:
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -115,8 +111,6 @@ jobs:
     steps:
       - name: Checkout repository code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push'
