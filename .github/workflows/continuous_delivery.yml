@@ -20,7 +20,7 @@ permissions:
 jobs:
   deliver-to-staging:
     runs-on: self-hosted    # VM2
-    if: ${{ github.event_name == 'workflow_dispatch' }} #github.event.workflow_run.conclusion == 'success' ||
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'}}
 
     steps:
       - name: Checkout repository code
