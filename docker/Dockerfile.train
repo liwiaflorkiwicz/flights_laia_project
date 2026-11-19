@@ -17,6 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt "dvc[ssh]"
 COPY configs/ ./configs/
 COPY src/ ./src/
 COPY .dvc/ ./.dvc/
+COPY dvc.yam* dvc.loc* ./
 COPY data/ ./data/
 
 # main entry point

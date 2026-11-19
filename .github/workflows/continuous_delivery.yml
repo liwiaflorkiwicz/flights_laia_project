@@ -116,3 +116,9 @@ jobs:
           IMAGE_BASE="ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving"
           docker tag "${IMAGE_BASE}:latest" "${IMAGE_BASE}:staging"
           docker push "${IMAGE_BASE}:staging"
+
+      # clean images
+      - name: Clean up dangling Docker images
+        if: always()
+        run: |
+            docker image prune -f
