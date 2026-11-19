@@ -2,6 +2,7 @@
 set -e
 
 echo "1. Pulling dataset via DVC from VM1"
+dvc config core.no_scm true
 dvc pull data/processed/flights_2022_2023.parquet --force
 
 echo "2. Preparing temporal data splits"
