@@ -33,8 +33,8 @@ jobs:
       # pull images
       - name: Pull latest Trainer and Serving images
         run: |
-          docker compose --profile training pull trainer
-          docker compose --profile staging pull api-staging
+            docker compose -f docker/docker-compose.yml --profile training pull trainer
+            docker compose -f docker/docker-compose.yml --profile staging pull api-staging
 
       # training on real data and registration in MLflow on VM1
       - name: Run Containerized Training (DVC -> Splits -> Train -> MLflow)
@@ -47,7 +47,7 @@ jobs:
       # test API Staging on port 8001
       - name: Start Staging API container (port 8001)
         run: |
-          docker compose --profile staging up -d --force-recreate api-staging
+          docker compose -f docker/docker-compose.yml --profile staging up -d --force-recreate api-staging
 
       # Smoke tests on port 8001
       - name: Run Staging integration smoke tests
@@ -90,7 +90,7 @@ jobs:
       - name: Stop and remove Staging API container
         if: always()
         run: |
-          docker compose --profile staging down
+            docker compose -f docker/docker-compose.yml --profile staging down
 
       # Promotion to MLflow
       - name: Promote model to @staging in MLflow
