@@ -1,5 +1,5 @@
 ﻿name: 2. Continuous Delivery - Train, Test Staging & Promote
-run-name: "CD: ${{ github.event.workflow_run.head_commit.message || github.ref_name }} (${{ github.event.workflow_run.head_sha }})"
+run-name: "CD: ${{ github.event.workflow_run.head_commit.message || github.ref_name }}"
 
 on:
   workflow_run:
@@ -40,7 +40,7 @@ jobs:
       # training on real data and registration in MLflow on VM1
       - name: Run Containerized Training (DVC -> Splits -> Train -> MLflow)
         run: |
-          docker compose --profile training run --rm trainer \
+          docker compose -f docker/docker-compose.yml --profile training run --rm trainer \
             --config configs/train.yaml \
             --max-train-rows 100000 \
             --run-name "CD-${{ github.sha }}"
