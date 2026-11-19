@@ -1,15 +1,16 @@
 ﻿name: 2. Continuous Delivery - Train, Test Staging & Promote
-#
-#on:
-#  workflow_run:
-#    workflows: ["1. Continuous Integration - Test, Build & Push Images"]
-#    types: [completed]
-#    branches: ["main", "feat/api-docker"]
-#  workflow_dispatch:
 
 on:
-  push:
-    branches: [ "main", "feat/api-docker" ]
+  workflow_run:
+    workflows: ["1. Continuous Integration - Test, Build & Push Images"]
+    types: [completed]
+    branches: ["main", "feat/api-docker"]
+
+  workflow_dispatch:
+
+#on:
+#  push:
+#    branches: [ "main", "feat/api-docker" ]
 
 
 
@@ -20,7 +21,7 @@ permissions:
 jobs:
   deliver-to-staging:
     runs-on: self-hosted    # VM2
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'}}
+    if: ${{ github.event.workflow_run.conclusion == 'success'}}
 
     steps:
       - name: Checkout repository code
@@ -108,9 +109,9 @@ jobs:
 
           mlflow.set_tracking_uri("http://10.17.0.190:5050")
           client = MlflowClient()
-          versions = client.search_model_versions("name=\"flight-delay-model\"")
+          versions = client.search_model_versions("name=\"flight-delay-severity\"")
           latest_version = max(int(v.version) for v in versions)
-          client.set_registered_model_alias("flight-delay-model", "staging", str(latest_version))
+          client.set_registered_model_alias("flight-delay-severity", "staging", str(latest_version))
           print(f"Promoted flight-delay-model version {latest_version} to @staging")
           '
 
