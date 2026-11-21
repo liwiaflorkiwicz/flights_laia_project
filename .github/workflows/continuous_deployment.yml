@@ -2,8 +2,9 @@ name: 3. Continuous Deployment - Deploy Serving API
 
 on:
   workflow_run:
-    workflows: ["2. Continuous Delivery - Train & Register Model"]
+    workflows: ["2. Continuous Delivery - Train, Test Staging & Promote"]
     types: [completed]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -24,13 +25,17 @@ jobs:
 
       - name: Pull latest Serving Image & Restart API Container
         run: |
-          docker compose pull api
-          docker compose up -d --force-recreate api
+          docker compose -f docker/docker-compose.yml pull api
+          docker compose -f docker/docker-compose.yml up -d --force-recreate api
 
       - name: Verify API Health Endpoint
         run: |
-          sleep 5
-          curl -f http://localhost:8000/health
+          for i in {1..30}; do
+            curl -sf http://localhost:8000/health | grep -q '"model_loaded":"True"' && exit 0
+            sleep 5
+          done
+          docker logs flight_api_prod
+          exit 1
 
       - name: Cleanup old Docker images
         if: always()

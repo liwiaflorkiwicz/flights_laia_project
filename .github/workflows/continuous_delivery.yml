@@ -1,11 +1,11 @@
-﻿name: 2. Continuous Delivery - Train, Test Staging & Promote
+name: 2. Continuous Delivery - Train, Test Staging & Promote
 run-name: "CD: ${{ github.event.workflow_run.head_commit.message || github.ref_name }}"
 
 on:
   workflow_run:
     workflows: ["1. Continuous Integration - Test, Build & Push Images"]
     types: [completed]
-    branches: ["main", "feat/api-docker"]
+    # no branch filter: any pushed branch that passed CI is delivered to staging
 
   workflow_dispatch:
 
@@ -13,10 +13,22 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: continuous-delivery
+  cancel-in-progress: false
+
+env:
+  # CI tags images with the commit SHA; docker-compose reads IMAGE_TAG
+  IMAGE_TAG: ${{ github.event.workflow_run.head_sha || 'latest' }}
+
 jobs:
   deliver-to-staging:
     runs-on: self-hosted    # VM2
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    # only for successful CI runs triggered by a push (PR runs do not push images)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
 
     steps:
       - name: Checkout repository code
@@ -54,17 +66,17 @@ jobs:
       - name: Run Staging integration smoke tests
         run: |
           echo "Waiting for Staging API to load model from MLflow..."
-          for i in {1..15}; do
-            if curl -sf http://localhost:8001/health | grep -q '"model_loaded":true'; then
+          for i in {1..30}; do
+            if curl -sf http://localhost:8001/health | grep -q '"model_loaded":"True"'; then
               echo "Staging API is healthy and model is loaded!"
               break
             fi
-            if [ $i -eq 15 ]; then
+            if [ $i -eq 30 ]; then
               echo "Staging API failed to become healthy!"
               docker logs flight_api_staging
               exit 1
             fi
-            sleep 2
+            sleep 5
           done
 
           echo "Testing /classify endpoint on Staging..."
@@ -98,15 +110,15 @@ jobs:
         run: |
           docker run --rm --entrypoint python \
             -e MLFLOW_TRACKING_URI=http://10.17.0.190:5050 \
-            ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:latest -c '
+            ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:${IMAGE_TAG} -c '
           import mlflow
           from mlflow.tracking import MlflowClient
 
           mlflow.set_tracking_uri("http://10.17.0.190:5050")
           client = MlflowClient()
-          versions = client.search_model_versions("name=\"flight-delay-severity\"")
+          versions = client.search_model_versions("name=\"flight-delay-model\"")
           latest_version = max(int(v.version) for v in versions)
-          client.set_registered_model_alias("flight-delay-severity", "staging", str(latest_version))
+          client.set_registered_model_alias("flight-delay-model", "staging", str(latest_version))
           print(f"Promoted flight-delay-model version {latest_version} to @staging")
           '
 
@@ -114,7 +126,7 @@ jobs:
       - name: Tag and push Serving image as :staging
         run: |
           IMAGE_BASE="ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving"
-          docker tag "${IMAGE_BASE}:latest" "${IMAGE_BASE}:staging"
+          docker tag "${IMAGE_BASE}:${IMAGE_TAG}" "${IMAGE_BASE}:staging"
           docker push "${IMAGE_BASE}:staging"
 
       # clean images
