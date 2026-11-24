@@ -23,7 +23,7 @@ services:
       - "8001:8000"
     environment:
       - MLFLOW_TRACKING_URI=http://10.17.0.190:5050
-      - MODEL_URI=models:/flight-delay-severity/latest
+      - MODEL_URI=models:/flight-delay-model/latest
     profiles:
       - staging
 
@@ -36,4 +36,4 @@ services:
       - "8000:8000"
     environment:
       - MLFLOW_TRACKING_URI=http://10.17.0.190:5050
-      - MODEL_URI=models:/flight-delay-severity@staging
+      - MODEL_URI=models:/flight-delay-model@staging

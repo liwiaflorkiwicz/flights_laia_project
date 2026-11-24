@@ -275,20 +275,20 @@ def log_to_mlflow(
 
         registered_name = None
 
+        ### TO DO: to register or not register automatically????
         if register:
             registered_name = cfg["mlflow"].get("registered_model_name")
         try:
             mlflow.sklearn.log_model(
-                pipeline,
+                sk_model=pipeline,
                 name="model",
                 input_example=input_example,
-                #registered_model_name=registered_name,
                 registered_model_name="flight-delay-model",
+                serialization_format="cloudpickle",
             )
         except Exception as exc:  # registry/file-store limitations, etc.
             print(f"WARNING: could not log model to MLflow ({exc}). Artifacts are still saved locally.")
             mlflow.log_dict(metadata, "model_metadata_fallback.json")
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
