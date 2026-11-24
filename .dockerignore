@@ -1,0 +1,15 @@
+.dvc/chache
+.dvc/temp
+__pycache__
+*.pyc
+.pytest_cache
+!data/**/*.dvc
+!data/*.dvc
+models/*.parquet
+
+.git
+.venv
+.pytest_cache/
+mlruns/
+mlflow.db
+data/raw/*

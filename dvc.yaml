@@ -6,3 +6,37 @@ stages:
     - src/data/make_dataset.py
     outs:
     - data/processed/flights_2022_2023.parquet
+
+  prepare_splits:
+    cmd: python -m src.data.prepare_splits --config configs/train.yaml
+    deps:
+    - data/processed/flights_2022_2023.parquet
+    - src/data/prepare_splits.py
+    - src/utils/config.py
+    - src/utils/dates.py
+    - configs/train.yaml
+    outs:
+    - data/processed/splits/train.parquet
+    - data/processed/splits/val.parquet
+    - data/processed/splits/test.parquet
+    - data/processed/splits/split_summary.json
+
+  train:
+    cmd: python -m src.modeling.train --config configs/train.yaml
+    deps:
+    - data/processed/splits/train.parquet
+    - data/processed/splits/val.parquet
+    - data/processed/splits/test.parquet
+    - src/features/build_features.py
+    - src/modeling/train.py
+    - src/modeling/evaluate.py
+    - src/utils/config.py
+    - src/utils/dates.py
+    - configs/train.yaml
+    outs:
+    - models/model.joblib
+    - reports/metrics.json
+    - reports/classification_report.txt
+    - reports/feature_importance.csv
+    - reports/figures/confusion_matrix_val.png
+    - reports/figures/confusion_matrix_test.png

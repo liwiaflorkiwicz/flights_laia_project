@@ -1,0 +1,337 @@
+{
+  "created_at": "2026-11-04T13:37:18.552255+00:00",
+  "git_commit": "ec0b13b",
+  "python_version": "3.12.10",
+  "lightgbm_version": "4.6.0",
+  "target": "DELAY_SEVERITY",
+  "labels": [
+    "on_time",
+    "moderate_delay",
+    "severe_delay"
+  ],
+  "classes": [
+    "moderate_delay",
+    "on_time",
+    "severe_delay"
+  ],
+  "n_features": 35,
+  "feature_names": [
+    "day_of_month",
+    "day_of_week",
+    "is_weekend",
+    "dow_sin",
+    "dow_cos",
+    "dep_hour",
+    "dep_minute",
+    "dep_minutes",
+    "dep_time_sin",
+    "dep_time_cos",
+    "arr_hour",
+    "arr_minute",
+    "arr_minutes",
+    "arr_time_sin",
+    "arr_time_cos",
+    "is_red_eye",
+    "is_overnight",
+    "dep_period",
+    "crs_elapsed_time",
+    "distance",
+    "distance_per_minute",
+    "implied_speed_mph",
+    "schedule_buffer_min",
+    "same_state",
+    "OP_UNIQUE_CARRIER",
+    "ORIGIN",
+    "DEST",
+    "ORIGIN_STATE_NM",
+    "DEST_STATE_NM",
+    "DEP_TIME_BLK",
+    "ROUTE",
+    "freq_OP_UNIQUE_CARRIER",
+    "freq_ORIGIN",
+    "freq_DEST",
+    "freq_ROUTE"
+  ],
+  "best_iteration": 21,
+  "training_seconds": 287.77,
+  "splits": {
+    "train": {
+      "rows": 11550058
+    },
+    "val": {
+      "rows": 1158416
+    },
+    "test": {
+      "rows": 566941
+    },
+    "summary": {
+      "strategy": "temporal",
+      "boundaries": {
+        "train_end": "2023-09-30",
+        "val_end": "2023-11-30",
+        "test": "> 2023-11-30"
+      },
+      "target": "DELAY_SEVERITY",
+      "labels": [
+        "on_time",
+        "moderate_delay",
+        "severe_delay"
+      ],
+      "splits": {
+        "train": {
+          "rows": 11550058,
+          "date_min": "2022-01-01",
+          "date_max": "2023-09-30",
+          "class_counts": {
+            "on_time": 9045047,
+            "moderate_delay": 1656464,
+            "severe_delay": 848547
+          },
+          "class_share": {
+            "on_time": 0.783117,
+            "moderate_delay": 0.143416,
+            "severe_delay": 0.073467
+          }
+        },
+        "val": {
+          "rows": 1158416,
+          "date_min": "2023-10-01",
+          "date_max": "2023-11-30",
+          "class_counts": {
+            "on_time": 989083,
+            "moderate_delay": 123803,
+            "severe_delay": 45530
+          },
+          "class_share": {
+            "on_time": 0.853824,
+            "moderate_delay": 0.106873,
+            "severe_delay": 0.039304
+          }
+        },
+        "test": {
+          "rows": 566941,
+          "date_min": "2023-12-01",
+          "date_max": "2023-12-31",
+          "class_counts": {
+            "on_time": 477788,
+            "moderate_delay": 63538,
+            "severe_delay": 25615
+          },
+          "class_share": {
+            "on_time": 0.842747,
+            "moderate_delay": 0.112072,
+            "severe_delay": 0.045181
+          }
+        }
+      }
+    }
+  },
+  "metrics": {
+    "val": {
+      "n_samples": 1158416,
+      "accuracy": 0.766266177262745,
+      "balanced_accuracy": 0.400132196251433,
+      "macro_precision": 0.3938975123315028,
+      "macro_recall": 0.400132196251433,
+      "macro_f1": 0.3939518817369392,
+      "weighted_f1": 0.7695836129431523,
+      "quadratic_weighted_kappa": 0.13247712299995118,
+      "per_class": {
+        "on_time": {
+          "precision": 0.8756485347117086,
+          "recall": 0.8683730283505025,
+          "f1": 0.8719956059753862,
+          "support": 989083
+        },
+        "moderate_delay": {
+          "precision": 0.21007650826406057,
+          "recall": 0.17432533945057874,
+          "f1": 0.1905384109439076,
+          "support": 123803
+        },
+        "severe_delay": {
+          "precision": 0.09596749401873905,
+          "recall": 0.15769822095321767,
+          "f1": 0.11932162829152368,
+          "support": 45530
+        }
+      },
+      "confusion_matrix": [
+        [
+          858893,
+          75714,
+          54476
+        ],
+        [
+          89060,
+          21582,
+          13161
+        ],
+        [
+          32912,
+          5438,
+          7180
+        ]
+      ],
+      "log_loss": 1.2388052178236248
+    },
+    "test": {
+      "n_samples": 566941,
+      "accuracy": 0.7485117498999014,
+      "balanced_accuracy": 0.395348433546244,
+      "macro_precision": 0.38842548942842997,
+      "macro_recall": 0.395348433546244,
+      "macro_f1": 0.3890843569147599,
+      "weighted_f1": 0.75099193429285,
+      "quadratic_weighted_kappa": 0.12710567510600113,
+      "per_class": {
+        "on_time": {
+          "precision": 0.8637086731802082,
+          "recall": 0.8579474578683433,
+          "f1": 0.8608184260842996,
+          "support": 477788
+        },
+        "moderate_delay": {
+          "precision": 0.19372930344735179,
+          "recall": 0.15929050332084738,
+          "f1": 0.17483006710945664,
+          "support": 63538
+        },
+        "severe_delay": {
+          "precision": 0.10783849165773,
+          "recall": 0.1688073394495413,
+          "f1": 0.1316045775505235,
+          "support": 25615
+        }
+      },
+      "confusion_matrix": [
+        [
+          409917,
+          39287,
+          28584
+        ],
+        [
+          46228,
+          10121,
+          7189
+        ],
+        [
+          18456,
+          2835,
+          4324
+        ]
+      ],
+      "log_loss": 1.235011150570189
+    }
+  },
+  "config": {
+    "data": {
+      "processed_path": "data/processed/flights_2022_2023.parquet",
+      "split_dir": "data/processed/splits",
+      "target": "DELAY_SEVERITY",
+      "chunk_size": 200000,
+      "fit_sample_rows": 1000000,
+      "split": {
+        "strategy": "temporal",
+        "train_end": "2023-09-30",
+        "val_end": "2023-11-30",
+        "random_state": 42,
+        "val_size": 0.15,
+        "test_size": 0.15
+      }
+    },
+    "features": {
+      "numeric": [
+        "day_of_month",
+        "day_of_week",
+        "is_weekend",
+        "dow_sin",
+        "dow_cos",
+        "dep_hour",
+        "dep_minute",
+        "dep_minutes",
+        "dep_time_sin",
+        "dep_time_cos",
+        "arr_hour",
+        "arr_minute",
+        "arr_minutes",
+        "arr_time_sin",
+        "arr_time_cos",
+        "is_red_eye",
+        "is_overnight",
+        "dep_period",
+        "crs_elapsed_time",
+        "distance",
+        "distance_per_minute",
+        "implied_speed_mph",
+        "schedule_buffer_min",
+        "same_state"
+      ],
+      "categorical": [
+        "OP_UNIQUE_CARRIER",
+        "ORIGIN",
+        "DEST",
+        "ORIGIN_STATE_NM",
+        "DEST_STATE_NM",
+        "DEP_TIME_BLK",
+        "ROUTE"
+      ],
+      "frequency": [
+        "OP_UNIQUE_CARRIER",
+        "ORIGIN",
+        "DEST",
+        "ROUTE"
+      ]
+    },
+    "model": {
+      "params": {
+        "objective": "multiclass",
+        "num_class": 3,
+        "n_estimators": 1200,
+        "learning_rate": 0.07,
+        "num_leaves": 63,
+        "max_depth": -1,
+        "min_child_samples": 200,
+        "subsample": 0.8,
+        "subsample_freq": 1,
+        "colsample_bytree": 0.8,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
+        "max_bin": 127,
+        "n_jobs": -1,
+        "random_state": 42,
+        "verbose": -1
+      },
+      "class_weight_power": 0.75,
+      "early_stopping_rounds": 100,
+      "eval_metric": "macro_f1"
+    },
+    "evaluation": {
+      "labels": [
+        "on_time",
+        "moderate_delay",
+        "severe_delay"
+      ],
+      "subgroup_columns": [
+        "OP_UNIQUE_CARRIER",
+        "ORIGIN"
+      ],
+      "min_subgroup_size": 200,
+      "figures_dir": "reports/figures",
+      "metrics_path": "reports/metrics.json",
+      "report_path": "reports/classification_report.txt"
+    },
+    "artifacts": {
+      "model_path": "models/model.joblib",
+      "metadata_path": "models/metadata.json"
+    },
+    "mlflow": {
+      "enabled": true,
+      "tracking_uri": "sqlite:///mlflow.db",
+      "experiment_name": "flight-delay-severity",
+      "registered_model_name": "flight-delay-severity",
+      "register_model": false,
+      "model_stage": "Staging"
+    }
+  }
+}

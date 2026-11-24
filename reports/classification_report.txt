@@ -1,0 +1,24 @@
+VALIDATION (Oct-Nov 2023)
+============================================================
+                precision    recall  f1-score   support
+
+       on_time     0.8756    0.8684    0.8720    989083
+moderate_delay     0.2101    0.1743    0.1905    123803
+  severe_delay     0.0960    0.1577    0.1193     45530
+
+      accuracy                         0.7663   1158416
+     macro avg     0.3939    0.4001    0.3940   1158416
+  weighted avg     0.7739    0.7663    0.7696   1158416
+
+
+TEST (Dec 2023)
+============================================================
+                precision    recall  f1-score   support
+
+       on_time     0.8637    0.8579    0.8608    477788
+moderate_delay     0.1937    0.1593    0.1748     63538
+  severe_delay     0.1078    0.1688    0.1316     25615
+
+      accuracy                         0.7485    566941
+     macro avg     0.3884    0.3953    0.3891    566941
+  weighted avg     0.7545    0.7485    0.7510    566941

@@ -1,0 +1,157 @@
+﻿name: 2. Continuous Delivery - Train, Test Staging & Promote
+run-name: "CD: ${{ github.event.workflow_run.head_commit.message || github.ref_name }}"
+
+on:
+  workflow_run:
+    workflows: ["1. Continuous Integration - Test, Build & Push Images"]
+    types: [completed]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: continuous-delivery
+  cancel-in-progress: false
+
+env:
+  # CI tags images with the commit SHA; docker-compose reads IMAGE_TAG
+  IMAGE_TAG: ${{ github.event.workflow_run.head_sha || 'latest' }}
+
+jobs:
+  deliver-to-staging:
+    runs-on: self-hosted    # VM2
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # pull images
+      - name: Pull latest Trainer and Serving images
+        run: |
+            docker compose -f docker/docker-compose.yml --profile training pull trainer
+            docker compose -f docker/docker-compose.yml --profile staging pull api-staging
+
+      # training on real data and registration in MLflow on VM1
+      - name: Run Containerized Training (DVC -> Splits -> Train -> MLflow)
+        run: |
+          docker compose -f docker/docker-compose.yml --profile training run --rm trainer \
+            --config configs/train.yaml \
+            --max-train-rows 100000 \
+            --run-name "CD-${{ github.event.workflow_run.head_sha || github.sha }}"
+
+      # test API Staging on port 8001
+      - name: Start Staging API container (port 8001)
+        run: |
+          docker compose -f docker/docker-compose.yml --profile staging up -d --force-recreate api-staging
+
+      # Smoke tests on port 8001
+      - name: Run Staging integration smoke tests
+        run: |
+          echo "Waiting for Staging API to load model from MLflow..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:8001/health | grep -q '"model_loaded":"True"'; then
+              echo "Staging API is healthy and model is loaded!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Staging API failed to become healthy!"
+              docker logs flight_api_staging
+              exit 1
+            fi
+            sleep 5
+          done
+
+          echo "Testing /classify endpoint on Staging..."
+          RESPONSE=$(curl -sf -X POST http://localhost:8001/classify \
+            -H "Content-Type: application/json" \
+            -d '{
+              "instances": [
+                {
+                  "YEAR": 2023,
+                  "MONTH": 10,
+                  "DAY_OF_MONTH": 15,
+                  "DAY_OF_WEEK": 7,
+                  "FL_DATE": "2023-10-15",
+                  "OP_UNIQUE_CARRIER": "AA",
+                  "ORIGIN": "JFK",
+                  "ORIGIN_STATE_NM": "New York",
+                  "DEST": "LAX",
+                  "DEST_STATE_NM": "California",
+                  "CRS_DEP_TIME": 830,
+                  "DEP_TIME_BLK": "0800-0859",
+                  "CRS_ARR_TIME": 1145,
+                  "CRS_ELAPSED_TIME": 315.0,
+                  "DISTANCE": 2475.0
+                },
+                {
+                  "YEAR": 2023,
+                  "MONTH": 10,
+                  "DAY_OF_MONTH": 16,
+                  "DAY_OF_WEEK": 1,
+                  "FL_DATE": "2023-10-16",
+                  "OP_UNIQUE_CARRIER": "DL",
+                  "ORIGIN": "LAX",
+                  "ORIGIN_STATE_NM": "California",
+                  "DEST": "JFK",
+                  "DEST_STATE_NM": "New York",
+                  "CRS_DEP_TIME": 1400,
+                  "DEP_TIME_BLK": "1400-1459",
+                  "CRS_ARR_TIME": 2230,
+                  "CRS_ELAPSED_TIME": 330.0,
+                  "DISTANCE": 2475.0
+                }
+              ]
+            }')
+          echo "Staging /classify response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"classifications"'
+
+      - name: Stop and remove Staging API container
+        if: always()
+        run: |
+          docker compose -f docker/docker-compose.yml --profile staging rm -sf api-staging
+
+      # Promotion to MLflow
+      - name: Promote model to @staging in MLflow
+        run: |
+          docker run --rm --entrypoint python \
+            -e MLFLOW_TRACKING_URI=http://10.17.0.190:5050 \
+            ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:${IMAGE_TAG} -c '
+          import mlflow
+          from mlflow.tracking import MlflowClient
+
+          mlflow.set_tracking_uri("http://10.17.0.190:5050")
+          client = MlflowClient()
+          versions = client.search_model_versions("name=\"flight-delay-model\"")
+          latest_version = max(int(v.version) for v in versions)
+          client.set_registered_model_alias("flight-delay-model", "staging", str(latest_version))
+          print(f"Promoted flight-delay-model version {latest_version} to @staging")
+          '
+
+      # :staging to GHCR
+      - name: Tag and push Serving image as :staging
+        run: |
+          IMAGE_BASE="ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving"
+          docker tag "${IMAGE_BASE}:${IMAGE_TAG}" "${IMAGE_BASE}:staging"
+          docker push "${IMAGE_BASE}:staging"
+
+      # clean images
+      - name: Clean up dangling Docker images
+        if: always()
+        run: |
+          docker image prune -f
