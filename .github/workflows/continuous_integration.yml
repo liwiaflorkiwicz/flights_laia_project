@@ -1,6 +1,6 @@
 name: 1. Continuous Integration - Test, Build & Push Images
 
-on:
+#on:
   #push:
   #  branches: [ "**" ]
   #pull_request:
