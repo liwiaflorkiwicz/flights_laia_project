@@ -283,7 +283,7 @@ def log_to_mlflow(
                 sk_model=pipeline,
                 name="model",
                 input_example=input_example,
-                registered_model_name="flight-delay-model",
+                registered_model_name=registered_name,
                 serialization_format="cloudpickle",
             )
         except Exception as exc:  # registry/file-store limitations, etc.
