@@ -1,8 +1,9 @@
 name: 1. Continuous Integration - Test, Build & Push Images
 
-#on:
-  #push:
-  #  branches: [ "**" ]
+on:
+  push:
+    #branches: [ "**" ]
+    branches: [ "abc" ]
   #pull_request:
   #  branches: [ "main", "feat/api-docker"]
 
