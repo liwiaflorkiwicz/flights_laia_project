@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # 1: Training container
   trainer:
-    image: ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-trainer:latest
+    image: ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-trainer:${IMAGE_TAG:-latest}
     container_name: flight_trainer_job
     environment:
       - MLFLOW_TRACKING_URI=http://10.17.0.190:5050   # VM1
@@ -17,7 +17,7 @@ services:
 
   # 2.0 Staging Api (smoke tests)
   api-staging:
-    image: ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:latest
+    image: ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:${IMAGE_TAG:-latest}
     container_name: flight_api_staging
     ports:
       - "8001:8000"
@@ -29,11 +29,11 @@ services:
 
   # 2: API Production container (works 24/7)
   api:
-    image: ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:latest
+    image: ghcr.io/liwiaflorkiwicz/flights_laia_project/flights-serving:staging
     container_name: flight_api_prod
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
       - MLFLOW_TRACKING_URI=http://10.17.0.190:5050
-      - MODEL_URI=models:/flight-delay-severity/latest
+      - MODEL_URI=models:/flight-delay-severity@staging

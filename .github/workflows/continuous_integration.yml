@@ -2,7 +2,7 @@ name: 1. Continuous Integration - Test, Build & Push Images
 
 on:
   push:
-    branches: [ "main", "feat/api-docker", "dev" ]
+    branches: [ "**" ]
   pull_request:
     branches: [ "main", "feat/api-docker"]
 
@@ -126,7 +126,9 @@ jobs:
           context: .
           file: docker/Dockerfile.train
           push: ${{ github.event_name == 'push' }}
-          tags: ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-trainer:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-trainer:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-trainer:latest
 
       - name: Build and push Serving Image (Dockerfile.serve)
         uses: docker/build-push-action@v6
@@ -134,4 +136,6 @@ jobs:
           context: .
           file: docker/Dockerfile.serve
           push: ${{ github.event_name == 'push' }}
-          tags: ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/flights_laia_project/flights-serving:latest
