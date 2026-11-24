@@ -6,17 +6,12 @@ from fastapi.responses import RedirectResponse
 import joblib
 import pandas as pd
 import os
+import mlflow
 import mlflow.sklearn
 
 from src.api.schemas import BatchInferenceRequest, BatchInferenceResponse
-import os
 from contextlib import asynccontextmanager
-from pathlib import Path
-
-import joblib
-import mlflow
-import mlflow.sklearn
-from fastapi import FastAPI
+from src.monitoring.logger import log_inference_batch
 
 # paths and variables
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -102,20 +97,19 @@ def classify_flights(payload: BatchInferenceRequest) -> BatchInferenceResponse:
 
     try:
         df_input = pd.DataFrame(payload.instances)
-        predictions = model_pipeline.predict(df_input)
-        return BatchInferenceResponse(classifications=list(predictions))
+        raw_predictions = model_pipeline.predict(df_input)
+        predictions = [str(p) for p in raw_predictions]  # convert to string for JSON serialization
+
+    # Logging dei metadati isolato: un eventuale problema di I/O non blocca la risposta
+        try:
+            log_inference_batch(payload.instances, predictions)
+        except Exception as log_err:
+            print(f"WARNING: metadata logging failed: {log_err}")
+
+        return BatchInferenceResponse(classifications=predictions)
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"data processing error: {str(e)}",
         )
-
-    import os
-    import mlflow.sklearn
-
-    MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "http://10.17.0.190:5050")
-    mlflow.set_tracking_uri(MLFLOW_URI)
-
-    # Pobranie najnowszej wersji zarejestrowanego modelu z MLflow
-    model = mlflow.sklearn.load_model("models:/flight-delay-model/latest")
