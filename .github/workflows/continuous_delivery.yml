@@ -113,9 +113,9 @@ jobs:
 
           mlflow.set_tracking_uri("http://10.17.0.190:5050")
           client = MlflowClient()
-          versions = client.search_model_versions("name=\"flight-delay-severity\"")
+          versions = client.search_model_versions("name=\"flight-delay-model\"")
           latest_version = max(int(v.version) for v in versions)
-          client.set_registered_model_alias("flight-delay-severity", "staging", str(latest_version))
+          client.set_registered_model_alias("flight-delay-model", "staging", str(latest_version))
           print(f"Promoted flight-delay-model version {latest_version} to @staging")
           '
 
