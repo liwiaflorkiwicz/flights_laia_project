@@ -34,6 +34,9 @@ async def lifespan(app: FastAPI):
     """Load model artifact into memory on application startup (MLflow Registry or local fallback)."""
     global model_pipeline, load_error
 
+    print(MODEL_URI)
+    print(LOCAL_MODEL_PATH)
+
     try:
         if LOCAL_MODEL_PATH:
             # only ci tests
